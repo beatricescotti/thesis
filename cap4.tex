@@ -1,6 +1,22 @@
-\chapter{Medical Datasets}
+\chapter{Medical Dataset}
 
 \section{NLST - National Lung Screening Trial Dataset}
+The aggressive and heterogeneous nature of lung cancer has thwarted efforts to reduce mortality from this cancer through the use of screening. 
+The advent of low-dose helical computed tomography (CT) altered the landscape of lung-cancer screening, with studies indicating that low-dose CT detects many tumors at early stages.
+ The National Lung Screening Trial (NLST) was conducted to determine whether screening with low-dose CT could reduce mortality from lung cancer.
+The NLST was a large, multicenter, randomized controlled trial that enrolled over 53,000 participants at high risk for lung cancer. 
+Participants were randomly assigned to receive either low-dose CT scans or standard chest X-rays. 
+The primary outcome was lung cancer mortality, with secondary outcomes including the detection of early-stage lung cancer and the impact of screening on overall mortality.
+
+Radiologists at the screening centers reviewed the images obtained at each of the three annual screening exams to check for signs of lung cancer.
+
+The image review was made without reference to any historical images. The radiologist recorded information about all visible abnormalities and assigned a preliminary screening result. A positive screening result (suspicious for lung cancer) was assigned if any non-calcified nodules or masses $\geq 4 mm$ in diameter were noted or if any other abnormalities were judged suspicious for lung cancer by the radiologist.
+
+\subsection{Dataset Pruning}
+The NLST dataset contains chest CT scans where each scan comprises multiple axial slices. 
+Notably, not all slices include tumor lesions. The dataset was then pruned by filtering slices based on a provided CSV file that identifies slices containing clinically relevant findings. After pruning, approximately 9,000 slices remain with malignant lesions with $\geq 4 mm$ in diameter. 
+However, benign tumor slices lack bounding box annotations, which presents a limitation for detection tasks.
+
 
 \subsection{Extraction of the pixel array}
 \section{DLCS - Duke Lung Cancer Screening Dataset}
