@@ -1,0 +1,41 @@
+\chapter{Medical Datasets}
+
+\section{NLST - National Lung Screening Trial Dataset}
+
+\subsection{Extraction of the pixel array}
+\section{DLCS - Duke Lung Cancer Screening Dataset}
+\subsection{Extraction of the 2D slices}
+\subsection{Dataset Pruning}
+
+\section{Pre processing the images}
+\subsection{Resampling}
+\subsection{Windowing}
+In computed tomography (CT), the intensity values of the pixels are quantified in \textbf{Hounsfield units (HU)}, a standardized scale that reflects the radiodensity of the tissue. This scale is defined relative to the attenuation coefficients of water and air:
+\begin{equation}
+    HU_{tissue} = 1000 \times \dfrac{\mu_{tissue} - \mu_{water}}{\mu_{water}-\mu_{air}}
+\end{equation}
+where $\mu$ represents the linear attenuation coefficient. Key reference points: water = 0 HU for definition, air = -1000 HU. \\
+\textbf{Windowing} is a technique used in computed tomography (CT) to \textbf{enhance the visibility of specific tissues or structures within the body.} It involves adjusting the range of Hounsfield units (HU) displayed in the CT image, allowing radiologists to focus on particular types of tissues, such as bones, soft tissues, or air-filled spaces. The window width and center determine the contrast and brightness of the image, respectively.
+\begin{itemize}
+    \item \textbf{Window width} (WW): This parameter controls the range of Hounsfield units displayed in the image. A narrow window width enhances the contrast between tissues with similar densities, while a wider window width allows a broader range of densities to be visualized.
+    \item \textbf{Window center} (WC): This parameter sets the midpoint of the Hounsfield unit range displayed in the image. Adjusting the window level changes the brightness of the image, allowing radiologists to focus on specific tissue types.
+\end{itemize}
+The choice of window width and level depends on the specific clinical question and the type of tissue being examined. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth]{immagini/other_windowing.png}
+    \caption{CT Hounsfield Unit (HU) ranges for key tissues. Highlighted regions show typical HU values for diagnostic reference, from dense compact bone ($\sim 3000$ HU ) to air ($1000$ HU), with soft tissues ($20-80$ HU) and fluids (blood $\sim 45$ HU, water $0$ HU) in intermediate ranges.}
+    \label{fig:general_windowing}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth]{immagini/windowing.png}
+    \caption{Standard CT windowing settings for different anatomical structures. Full CT value range ([-1000, 3000] HU). Clinical presets with window center (WC) and width (WW) values for bone (WC=1000, WW=2500), mediastinum (WC=-50, WW=400), and lung (WC=-600, WW=1700) visualization.}
+    \label{fig:windowing_lung}
+\end{figure}
+
+\subsubsection{RBG Windowing}
+\subsection{Padding}
+\subsection{Masking}

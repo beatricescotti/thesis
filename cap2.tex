@@ -1,0 +1,59 @@
+\setlength{\headheight}{14.5pt} % Adjust head height
+\addtolength{\topmargin}{-2.5pt} % Compensate for the increased head height
+\chapter{Machine Learning in a nutshell} 
+
+Machine learning is a subfield of artificial intelligence that focuses on the development of algorithms and statistical models that enable computers to perform tasks without explicit instructions. Instead, these systems learn from data, identifying patterns and making decisions based on the information they have been trained on.
+Machine learning consists of designing efficient and accurate prediction algorithms. More generally, learning techniques are data-drivem methods combining fundamental concepts in computer science with ideas from statistics, probability and optimization.
+\subsubsection{Types of tasks}
+The following are some standard types of tasks in machine learning:
+\begin{itemize}
+    \item \textbf{Classification:} Assigning labels to data points based on learned patterns (e.g., e-mail spam detection).
+    \item \textbf{Regression:} Predicting continuous values based on input features (e.g., predicting house prices). In regression, the penalty for an incorrect prediction depends on the magnitude of the difference between the true and predicted values, in contrast with classification problem, where there is typically no notion of closeness between various categories. 
+    \item \textbf{Clustering:} Grouping similar data points together without predefined labels.
+    \item \textbf{Anomaly detection:} Identifying unusual patterns that do not conform to expected behavior.
+    \item \textbf{Ranking}: Ordering items based on their relevance or importance.
+\end{itemize}
+
+Algorithms that solve a learning task based on semantically annotated historical data are said to operate in a \textbf{supervised learning} mode. In contrast, algorithms that use data without any semantic annotation are said to operate in an \textbf{unsupervised learning} mode. In the latter case, the algorithm is expected to discover patterns in the data without any prior knowledge of the labels or categories.
+In this thesis I'll mainly focus on supervised learning. 
+
+\textbf{Label set: } We use \( Y \) to denote the set of all possible labels for a data point of a given learning problem. Note that the labels can be of two different types: \text{categorical} labels, which are discrete and finite and define classification problems, and \text{continuous} labels, which can take any value in a continuous range and define regression problems.
+
+\section{Neural networks and deep learning} 
+Neural networks are a class of machine learning algorithms inspired by the structure and function of the human brain. They consist of interconnected nodes (neurons) that process information in layers. Deep learning refers to the use of neural networks with many layers (deep neural networks) to model complex patterns in large datasets. This approach has led to significant advancements in areas such as image recognition, natural language processing, and game playing.
+
+\section{YOLO: You Only Look Once}
+Object detection is a task that involves identifying and classifying objects present in images or videos. Initially, object detection was approached as a pipeline consisting of three main steps: proposal generation, feature extraction and region classification. However, this approach was computationally expensive and often led to suboptimal results.
+The emergence of deep learning brought a significant change in object detection, with deep convolutional neural networks (CNNs) playing a crucial role in this transformation. CNNs are designed to automatically learn hierarchical features from raw pixel data, eliminating the need for manual feature engineering. This shift allowed for more efficient and accurate object detection systems.
+
+Currently, deep learning-based object detection frameworks can be classified in two families: 
+\begin{itemize}
+    \item \textbf{Two-stage detectors:} These methods first generate region proposals and then classify them. Examples include R-CNNs (Region-based Convolutional Neural Networks), that first generate region proposals using a selective search algorithm and then extracts features from these regions using a CNN; the extracted features are then fed into an SVM for object classification. 
+    \item \textbf{One-stage detectors:} These methods perform detection in a single pass, directly predicting bounding boxes and class probabilities. Examples include YOLO (You Only Look Once), which exists in eleven versions.The YOLO models are popular for their accuracy and compact size. It is a state-of-the-art model that could be trained on any hardware. YOLOv8, in particular, was developed by Ultralytics and introduced on January 2023. It is used to detect objects in images, classify images and distinguish onjects from each other. 
+
+\end{itemize}
+
+\subsection{Architecture of YOLOv8}
+The YOLOv8 architecture is composed of two major parts, namely the \textbf{backbone} and the \textbf{head}, both of which use a fully convolutional neural network. 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/yolo_architecture.png}
+    \caption{Architecture of YOLOv8. The backbone extracts features from the input image, while the head predicts bounding boxes and class probabilities.}
+    \label{fig:yolo_architecture}
+\end{figure}
+\begin{itemize}
+    \item The \textbf{backbone} is responsible for extracting features from the input image. It consists of a modified version of the CSPDarknet53 architecture, which has 53 convolutional layers and employs a technique called cross-stage partial connections to enhance the transmission of information across the various levels of the network. The convolutional layers are organized in a sequential manner to extract relevant features from the input image.
+    \item The \textbf{head} is responsible for predicting bounding boxes and class probabilities. It consists of a series of convolutional layers that take the features extracted by the backbone and apply additional operations to predict the bounding boxes and class probabilities for each object in the image. The head uses a technique called anchor boxes to handle objects of different sizes and aspect ratios.
+\end{itemize}
+
+
+The YOLOv8 framework can be used to perform computer vision tasks such as detection, segmentation, classification and pose estimation and comes with pre-trained models for each task. For detection, the models are pre trained on the COCO dataset, while for classification on ImageNet dataset. 
+There are different versions of YOLOv8, each designed for different tasks and with different architectures. The most common versions are YOLOv8n, YOLOv8s, YOLOv8m, YOLOv8l and YOLOv8x, where the letter indicates the size of the model (n for nano, s for small, m for medium, l for large and x for extra large). The larger the model, the more parameters it has and the more computational resources it requires to train and run.
+
+\section{Object Detection Metrics}
+Object detection metrics are used to evaluate the performance of object detection algorithms. The most common metrics are precision, recall and mean Average Precision (mAP).
+
+
+\section{Transfer learning}
+
+\section{Curriculum learning}
