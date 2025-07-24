@@ -4,10 +4,40 @@
 \usepackage{graphicx} 
 \usepackage{subfig}
 \usepackage{booktabs}
-\usepackage[table,xcdraw]{xcolor}
-%\usepackage{multirow}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage[export]{adjustbox}
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},  
+    language=python,
+    basicstyle=\footnotesize\ttfamily,
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
 \usepackage[version=4]{mhchem}
 \usepackage{hyperref} 
+
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,

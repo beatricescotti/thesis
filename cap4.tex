@@ -13,12 +13,54 @@ Radiologists at the screening centers reviewed the images obtained at each of th
 The image review was made without reference to any historical images. The radiologist recorded information about all visible abnormalities and assigned a preliminary screening result. A positive screening result (suspicious for lung cancer) was assigned if any non-calcified nodules or masses $\geq 4 mm$ in diameter were noted or if any other abnormalities were judged suspicious for lung cancer by the radiologist.
 
 \subsection{Dataset Pruning}
-The NLST dataset contains chest CT scans where each scan comprises multiple axial slices. 
+The NLST dataset contains chest CT scans where each scan comprises multiple ($\sim 143$) axial slices. 
 Notably, not all slices include tumor lesions. The dataset was then pruned by filtering slices based on a provided CSV file that identifies slices containing clinically relevant findings. After pruning, approximately 9,000 slices remain with malignant lesions with $\geq 4 mm$ in diameter. 
 However, benign tumor slices lack bounding box annotations, which presents a limitation for detection tasks.
 
+The annotations are in the form of a CSV file that contains the following columns:
+\begin{itemize}
+    \item \textbf{PID}: Unique identifier for each patient.
+    \item \textbf{Slice Number}: The specific slice within the CT scan, which is also the name of the file.
+    \item \textbf{CT filter}: Indicates the type of filter applied to the CT scan.
+    \item \textbf{x, y, width, height}: Coordinates of the bounding box around the lesion, x and y represent the top-left corner of the bounding box, while width and height represent its dimensions.
+\end{itemize}
 
 \subsection{Extraction of the pixel array}
+The CT images are in the dicom format, which is a standard format for medical imaging data. Each CT scan consists of multiple slices, and each slice is represented as a 2D image. The pixel values in these images are typically stored in Hounsfield units (HU), which represent the radiodensity of the tissue.
+A dicom file contains:
+\begin{itemize}
+    \item \textbf{Pixel Array}: The pixel array is a 2D array of pixel values that represent the intensity of the image. Each pixel value corresponds to a specific location in the image and is typically stored as a 16-bit integer.
+    \item \textbf{Metadata}: The metadata contains information about the image, such as the patient's name, the acquisition date, the image orientation, pixel spacing, and slice thickness. This information is essential for interpreting the image correctly.
+\end{itemize}
+
+\subsection{Image Metadata}
+The metadata of a CT image contains important information about the image acquisition parameters and the physical characteristics of the image. The following are some key metadata fields commonly found in CT images:
+\begin{itemize}
+    \item \textbf{Pixel Spacing (mm)}: The physical distance between adjacent pixels in the x and y directions, typically measured in millimeters.
+    \item \textbf{Slice Thickness (mm)}: The thickness of each slice in the z direction, also measured in millimeters.
+    \item \textbf{Field of View (FOV) (cm)}: The physical dimension of the area captured in the image, typically measured in centimeters.
+    \item \textbf{Image Orientation}: The orientation of the image, which can be specified using a combination of row and column vectors.
+    \item \textbf{Image Position}: The position of the image in 3D space, typically specified using x, y, and z coordinates.
+\end{itemize}
+
+\section{CT planes}
+In computed tomography (CT), the images are typically acquired in three orthogonal planes: axial, coronal, and sagittal. Each plane provides a different perspective of the anatomical structures within the body.
+\begin{itemize}
+    \item \textbf{Axial}: horizontal plane that divides the body into upper and lower parts.
+    \item \textbf{Coronal}: vertical plane that divides the body into anterior (front) and posterior (back) parts.
+    \item \textbf{Sagittal}: vertical plane that divides the body into left and right parts.
+\end{itemize}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/planes.jpg}
+    \caption{CT planes: axial, coronal, and sagittal. The axial plane is horizontal, the coronal plane is vertical and divides the body into front and back, and the sagittal plane is vertical and divides the body into left and right.}
+    \label{fig:ct_planes}
+\end{figure}
+
+
+
+
 \section{DLCS - Duke Lung Cancer Screening Dataset}
 \subsection{Extraction of the 2D slices}
 \subsection{Dataset Pruning}
@@ -50,6 +92,40 @@ The choice of window width and level depends on the specific clinical question a
     \includegraphics[width=0.75\textwidth]{immagini/windowing.png}
     \caption{Standard CT windowing settings for different anatomical structures. Full CT value range ([-1000, 3000] HU). Clinical presets with window center (WC) and width (WW) values for bone (WC=1000, WW=2500), mediastinum (WC=-50, WW=400), and lung (WC=-600, WW=1700) visualization.}
     \label{fig:windowing_lung}
+\end{figure}
+
+
+\begin{lstlisting}[style=mystyle]
+    window_center = -600    
+    window_width = 1700   
+    window_min = window_center - window_width // 2
+    window_max = window_center + window_width // 2
+
+    array = np.load(array_path)
+    array_windowed = np.clip(array, window_min, window_max)  
+    array_normalized = 255*(array_windowed - window_min)/(window_width)
+    array_uint8 = array_normalized.astype(np.uint8) 
+
+    img = Image.fromarray(array_uint8)
+\end{lstlisting}
+
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}[b]{0.6\textwidth}
+        \centering
+        \includegraphics[width=\linewidth, height=5cm, keepaspectratio]{immagini/slice_DLCS_0001_DLCS_0001_01_n0.png}
+        \label{fig:image_a}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.6\textwidth}
+        \centering
+        \includegraphics[width=\linewidth, height=5cm, keepaspectratio]{immagini/slice_DLCS_0001_DLCS_0001_01_n0_1.png}
+        \label{fig:image_b}
+    \end{minipage}
+    
+    \caption{Didascalia principale delle due immagini affiancate}
+    \label{fig:combined}
 \end{figure}
 
 \subsubsection{RBG Windowing}
