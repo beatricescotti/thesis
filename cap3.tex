@@ -63,3 +63,78 @@ The pseudorapidity $\eta$ is a measure of the angle of a particle relative to th
 where $\theta$ is the polar angle of the particle with respect to the beam axis.
 
 
+\section{Algorithms for jet reconstruction}
+Jet reconstruction algorithms are essential for identifying and grouping particles produced in high-energy collisions into jets, which represent the hadronic remnants of the original partons. These algorithms can be broadly categorized into two main types: \textbf{cone algorithms} and \textbf{sequential clustering algorithms}.
+
+\subsection{Cone Algorithms}
+Cone algorithms assume that particles in jets will show up in conical regions and thus they cluster based on $\eta - \phi $ space, resulting in jets with rigid circular boundaries.
+Most of the cone algorithms are iterative cones (IC). In such algorithms, a seed particle $i$ sets some initial direction, and one sums the momenta of all particles $j$ within a circle of radius $R$ around $i$ in azimuthal angle $\phi$ and pseudorapidity $\eta$, i.e. taking all $j$ such that 
+\begin{equation}
+    \Delta R_{ij}^2 = (y_i - y_j)^2 + (\phi_i - \phi_j)^2 < R^2
+\end{equation}
+where $y_i$ and $y_j$ are the pseudorapidities of particles $i$ and $j$, respectively, and $\phi_i$ and $\phi_j$ are their azimuthal angles. The total momentum of the jet is then calculated as the sum of the momenta of all particles within this cone.
+The direction of the jet is then recalculated as the weighted average of the momenta of all particles within the cone, and the process is repeated until no more particles can be added to the jet.
+
+\subsection{Sequential Clustering Algorithms}
+Gli algoritmi a ricombinazione sequenziale utilizzano informazioni geometriche ed energetiche per aggregare le particelle che potenzialmente arrivano dallo stesso partone, ricostruendo così la storia del getto.
+
+\subsubsection{$k_T$ Algorithm}
+The $k_T$ algorithm is a sequential clustering algorithm that uses the concept of distance between particles to group them into jets. The distance between two particles $i$ and $j$ is defined as:
+\begin{equation}
+    d_{ij} = \min(p_{T,i}^2, p_{T,j}^2) \dfrac{\Delta R_{ij}^2}{R^2}
+\end{equation}
+while the distance between a particle $i$ and the beam axis is defined as:
+\begin{equation}
+    d_{iB} = p_{T,i}^{2}
+\end{equation}
+For each particle, the algotithm calculated the minumum distance betwen $d_{ij}$ and $d_{iB}$. 
+\begin{equation}
+    d_{min} = \min(d_{ij}, d_{iB})
+\end{equation}
+If $d_{min}$ is smaller than a predefined threshold, the particle is added to a jet; otherwise, it is considered a standalone particle. The algorithm proceeds iteratively, recalculating the distances after each clustering step until all particles are grouped into jets or no more particles can be clustered.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/kt.png}
+    \caption{Schematic representation of the $k_T$ algorithm. The algorithm iteratively clusters particles based on their transverse momentum and distance in $\eta - \phi$ space, forming jets.}
+    \label{fig:kt_algorithm}
+\end{figure}
+
+\subsubsection{Anti-$k_T$ Algorithm}
+The anti-$k_T$ algorithm is a variant of the $k_T$ algorithm that uses a different distance measure to cluster particles. It is designed to produce jets with more uniform shapes and is particularly effective in high-energy collisions where jets can be closely spaced.
+The distance between two particles $i$ and $j$ is defined as:
+\begin{equation}
+    d_{ij} = \min(\dfrac{1}{p_{T,i}^2},\dfrac{1}{p_{T,j}^2}) \dfrac{\Delta R_{ij}^2}{R^2}
+\end{equation}
+while the distance between a particle $i$ and the beam axis is defined as:
+\begin{equation}
+    d_{iB} = \dfrac{1}{p_{T,i}^{2\beta}}
+\end{equation}
+The algorithm proceeds similarly to the $k_T$ algorithm, calculating the minimum distance between particles and the beam axis, and clustering them into jets based on this distance. The key difference is that the anti-$k_T$ algorithm tends to produce jets with more uniform shapes, making it more suitable for high-energy collisions where jets can be closely spaced.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/antikt.png}
+    \caption{Schematic representation of the anti-$k_T$ algorithm. The algorithm iteratively clusters particles based on their transverse momentum and distance in $\eta - \phi$ space, forming jets with more uniform shapes.}
+    \label{fig:antikt_algorithm}
+\end{figure}
+
+\subsubsection{Cambridge/Aachen Algorithm}
+The Cambridge/Aachen algorithm is another sequential anti$k_T$ clustering algorithm that uses a different distance measure to cluster particles. It is designed to produce jets with more uniform shapes and is particularly effective in high-energy collisions where jets can be closely spaced.
+The distance between two particles $i$ and $j$ is defined as:
+\begin{equation}
+    d_{ij} = \Delta R_{ij}^2
+\end{equation}
+while the distance between a particle $i$ and the beam axis is defined as:
+\begin{equation}
+    d_{iB} =  1
+\end{equation}
+
+Physically, the differences between the three algorithms are contained in the momentum weighting.  For the $k_T$ algorithm, the weighting is done to preferentially merge costituents with low transverse momentum with respect their nearest neighbours. 
+For the anti$k_T$, the weighting is done so as to preferentially merge constituents with high transverse momentum with respect to their nearest neighbours.
+The C-A algorithm relies only on distance weighting with no $k_T$ weighting at all.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/ca.png}
+    \caption{}
+    \label{fig:cambridge_aachen_algorithm}
+\end{figure}
