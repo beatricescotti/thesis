@@ -1,4 +1,4 @@
-\chapter{Medical Imaging and Computed Tomography}
+\chapter{Computed Tomography}
 
 A medical image is defined as a bidimensional (projection) or a tridimensional (tomography) representation of the values of a certain physical quantity or parameter in every point of the field of view. 
 
@@ -11,12 +11,85 @@ Images can be divided in
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.4\textwidth]{immagini/pet_CT.png} 
+    \includegraphics[width=0.4\textwidth]{immagini/cap1/pet_CT.png} 
     \caption{} 
     \label{fig:pet_CT} 
 \end{figure}
 
+Computed Tomography (CT) is a non invasive imaging tecnique that uses  X-rays and computer processing to create detailed cross-sectional images (or slices) of the body. 
+\section{Tomography setup}
+L'idea dietro una tomografia è quella di ottenere un'immagine tridimensionale di un oggetto a partire da una serie di immagini bidimensionali ottenute da diverse angolazioni.
+Per questo motivo, un tomografo è composto, come tutti i sistemi per misurare radiazioni, da una sorgente di radiazioni (un tubo a raggi X) e da una serie di rivelatori di particelle. Per far si che vengano acquisite diverse proiezioni a diverse angolazioni, il tubo a raggi X e i rivelatori sono montati su un supporto rotante che permette di ruotare il sistema attorno al paziente o in generale all'oggetto da esaminare.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{immagini/cap1/CT.png} 
+    \caption{} 
+    \label{fig:tomografia}
+\end{figure}
 
+Come si nota in figura \ref{fig:tomografia}, i detector non sono disposti in un piano perpendicolare alla sorgente di raggi X, ma lungo un arco di circonferenza per far si che i pixel della proiezione abbiano tutti la stessa dimensione reale e che quindi non ci siano distorsioni dimensionali. 
 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{immagini/cap1/setup.png} 
+    \caption{In the frontal view we can see, in order, the X-ray tube (radiation source), the rotating gantry (support for the X-ray tube and detectors), the field of measurement (where the patient or the object is allocated), the anti scatter collimators (to reduce the amount of scattered radiation reaching the detectors), and the detectors (which measure the intensity of the X-rays after they pass through the object). In the lateral view we can see the presence of colimators, used to adjust the narrowness of the beam depending on the type of scan and the area of interest.} 
+    \label{fig:CT_detector}
+\end{figure}
 
+\section{Image Reconstruction}
+Una radiografia è una proiezione bidimensionale della radizione che attraversa un oggetto tridimensionale, il che mi dà diverse ambiguità se voglio ricostruire il vero profilo dell'oggetto.
+Una tomografia è invece un insieme di proiezioni dell'oggetto ottenute a diverse angolazioni.
+Fare una tomografia, quindi, consiste nel misurare molti integrali di radiazione lungo diverse direzioni, per poi ricostruire l'immagine tridimensionale dell'oggetto in questione.
 
+\subsection{Mathematical Implementation}
+The mathematical model of a tomographic reconstruction is based on the Radon transform, which describes how the projection of a function (the object to be reconstructed) can be obtained by integrating the function along straight lines.
+Given the function \( f(x,y) \), that represents the 2D density of the object to be reconstructed and a certain projection at the angle \( \theta \), the path of each X-ray can be described by the straight line:
+\begin{equation}
+    x \cos(\theta) + y \sin(\theta) = s
+\end{equation}
+where \( s \) is the distance from the origin to the line along which the X-ray is traveling. The CT measurement corresponds to an integration of the funciotn \( f(x,y) \) along such a ray:
+\begin{equation}
+    p(s,\theta) = \int_{-\infty}^{+\infty} f(x,y) \delta(x \cos(\theta) + y \sin(\theta) - s) dx dy
+\end{equation}
+where \( p(s,\theta) \) is the projection of the function \( f(x,y) \), and the Dirac delta function \( \delta(x \cos(\theta) + y \sin(\theta) - s) \) ensures that the integration is performed only along the line defined by the angle \( \theta \) and the distance \( s \).
+We can now define the \textbf{Radon transform \( R \)} as the 1D projection (or radiograph) of the 2D function \( f(x,y) \) at the angle \( \theta \).
+\begin{equation}
+    P = R\cdot f
+\end{equation}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{immagini/cap1/projection.png} 
+    \caption{} 
+    \label{fig:radon}
+\end{figure}
+
+Now, if we take the 1D Fourier transform \( P(\theta, u) \) of the projection data \( p(s, \theta) \):
+\begin{equation}
+    P(\theta, u) = \int_{-\infty}^{+\infty} p(s, \theta) e^{-2\pi i u s} ds = \int \int dx dy f(x,y) e^{2\pi i u (x \cos\theta + y \sin\theta)}
+\end{equation}
+
+and we compare to the general 2D Fourier transform of the function \( f(x,y) \):
+\begin{equation}
+    F(u_x, u_y) = \int \int dx dy f(x,y) e^{-2\pi i (u_x x + u_y y)}
+\end{equation}
+where \( u_x = u \cos\theta \) and \( u_y = u \sin\theta \), we can see that the Radon transform is related to the 2D Fourier transform by the following relationship:
+\begin{equation}
+    P(\theta, u) = F(u \cos\theta, u \sin\theta)
+\end{equation}
+This means that 1D fourier transform of the projection $Rf(s, \theta)$ is equal to the 2D fourier transform of $f(x,y)$ in (\( u_x, u_y \)) coordinates, where \( u_x = u \cos\theta \) and \( u_y = u \sin\theta \).
+
+To calculate the original function \( f(x,y) \), let's do the Fourier antitransform: 
+\begin{equation}
+    f(x,y) = \int \int du_x du_y F(u_x, u_y) e^{2\pi i (u_x x + u_y y)}
+\end{equation}
+Now we can substitute \( u_x = u \cos\theta \) and \( u_y = u \sin\theta \) to finally obtain:
+\begin{equation}
+    f(x,y) = \int_{0}^{\pi} d\theta \int_{-\infty}^{+\infty} du |u| P(\theta, u) e^{2\pi i u (x \cos\theta + y \sin\theta)} 
+\end{equation}
+the absolute value of \( u \) is the jacobian of the transformation: \( du_x du_y = |u| d\theta du \) .
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap1/radon.png} 
+    \caption{The Radon transform is a mathematical operation that transforms a function defined in the spatial domain into a function defined in the projection domain. It is used in computed tomography to reconstruct images from projection data.} 
+    \label{fig:radon_transform}
+\end{figure}
