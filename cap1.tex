@@ -9,7 +9,7 @@ Images can be divided in
 \end{itemize}
 
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.4\textwidth]{immagini/cap1/pet_CT.png} 
     \caption{} 
@@ -20,7 +20,7 @@ Computed Tomography (CT) is a non invasive imaging tecnique that uses  X-rays an
 \section{Tomography setup}
 L'idea dietro una tomografia è quella di ottenere un'immagine tridimensionale di un oggetto a partire da una serie di immagini bidimensionali ottenute da diverse angolazioni.
 Per questo motivo, un tomografo è composto, come tutti i sistemi per misurare radiazioni, da una sorgente di radiazioni (un tubo a raggi X) e da una serie di rivelatori di particelle. Per far si che vengano acquisite diverse proiezioni a diverse angolazioni, il tubo a raggi X e i rivelatori sono montati su un supporto rotante che permette di ruotare il sistema attorno al paziente o in generale all'oggetto da esaminare.
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.45\textwidth]{immagini/cap1/CT.png} 
     \caption{} 
@@ -29,7 +29,7 @@ Per questo motivo, un tomografo è composto, come tutti i sistemi per misurare r
 
 Come si nota in figura \ref{fig:tomografia}, i detector non sono disposti in un piano perpendicolare alla sorgente di raggi X, ma lungo un arco di circonferenza per far si che i pixel della proiezione abbiano tutti la stessa dimensione reale e che quindi non ci siano distorsioni dimensionali. 
 
-\begin{figure}[h!]
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=0.7\textwidth]{immagini/cap1/setup.png} 
     \caption{In the frontal view we can see, in order, the X-ray tube (radiation source), the rotating gantry (support for the X-ray tube and detectors), the field of measurement (where the patient or the object is allocated), the anti scatter collimators (to reduce the amount of scattered radiation reaching the detectors), and the detectors (which measure the intensity of the X-rays after they pass through the object). In the lateral view we can see the presence of colimators, used to adjust the narrowness of the beam depending on the type of scan and the area of interest.} 
@@ -92,4 +92,52 @@ the absolute value of \( u \) is the jacobian of the transformation: \( du_x du_
     \includegraphics[width=0.8\textwidth]{immagini/cap1/radon.png} 
     \caption{The Radon transform is a mathematical operation that transforms a function defined in the spatial domain into a function defined in the projection domain. It is used in computed tomography to reconstruct images from projection data.} 
     \label{fig:radon_transform}
+\end{figure}
+
+The absolute value of $u$ mathematically is the Jacobian of the coordinate transformation, but has also a physical meaning, because is filtering the high frequency noise from the image, being a low-pass filter.
+The Radon transform with the absolute value of \( u \) is called the \textbf{filtered back projection} (FBP) and is the most common method for reconstructing images from CT data.
+
+
+\section{Windowing}
+In computed tomography (CT), the intensity values of the pixels are quantified in \textbf{Hounsfield units (HU)}, a standardized scale that reflects the radiodensity of the tissue. This scale is defined relative to the attenuation coefficients of water and air:
+\begin{equation}
+    HU_{tissue} = 1000 \times \dfrac{\mu_{tissue} - \mu_{water}}{\mu_{water}-\mu_{air}}
+\end{equation}
+where $\mu$ represents the linear attenuation coefficient. Key reference points: water = 0 HU for definition, air = -1000 HU. \\
+\textbf{Windowing} is a technique used in computed tomography (CT) to \textbf{enhance the visibility of specific tissues or structures within the body.} It involves adjusting the range of Hounsfield units (HU) displayed in the CT image, allowing radiologists to focus on particular types of tissues, such as bones, soft tissues, or air-filled spaces. The window width and center determine the contrast and brightness of the image, respectively.
+\begin{itemize}
+    \item \textbf{Window width} (WW): This parameter controls the range of Hounsfield units displayed in the image. A narrow window width enhances the contrast between tissues with similar densities, while a wider window width allows a broader range of densities to be visualized.
+    \item \textbf{Window center} (WC): This parameter sets the midpoint of the Hounsfield unit range displayed in the image. Adjusting the window level changes the brightness of the image, allowing radiologists to focus on specific tissue types.
+\end{itemize}
+The choice of window width and level depends on the specific clinical question and the type of tissue being examined. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/other_windowing.png}
+    \caption{CT Hounsfield Unit (HU) ranges for key tissues. Highlighted regions show typical HU values for diagnostic reference, from dense compact bone ($\sim 3000$ HU ) to air ($1000$ HU), with soft tissues ($20-80$ HU) and fluids (blood $\sim 45$ HU, water $0$ HU) in intermediate ranges.}
+    \label{fig:general_windowing}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth]{immagini/windowing.png}
+    \caption{Standard CT windowing settings for different anatomical structures. Full CT value range ([-1000, 3000] HU). Clinical presets with window center (WC) and width (WW) values for bone (WC=1000, WW=2500), mediastinum (WC=-50, WW=400), and lung (WC=-600, WW=1700) visualization.}
+    \label{fig:windowing_lung}
+\end{figure}
+
+
+
+\section{CT planes}
+In computed tomography (CT), the images are typically acquired in three orthogonal planes: axial, coronal, and sagittal. Each plane provides a different perspective of the anatomical structures within the body.
+\begin{itemize}
+    \item \textbf{Axial}: horizontal plane that divides the body into upper and lower parts.
+    \item \textbf{Coronal}: vertical plane that divides the body into anterior (front) and posterior (back) parts.
+    \item \textbf{Sagittal}: vertical plane that divides the body into left and right parts.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap1/planes.jpg}
+    \caption{CT planes: axial, coronal, and sagittal. The axial plane is horizontal, the coronal plane is vertical and divides the body into front and back, and the sagittal plane is vertical and divides the body into left and right.}
+    \label{fig:ct_planes}
 \end{figure}
