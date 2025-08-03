@@ -1,25 +1,22 @@
 \chapter{Computed Tomography}
-
-A medical image is defined as a bidimensional (projection) or a tridimensional (tomography) representation of the values of a certain physical quantity or parameter in every point of the field of view. 
-
-Images can be divided in 
-\begin{itemize}
-    \item \textbf{Morphological}: representation of shape and structure of organs 
-    \item \textbf{Functional}: representation of the spatial distribution of a biological function 
-\end{itemize}
-
+Computed Tomography (CT) is a medical imaging technique that uses X-rays to generate detailed cross-sectional images of the human body. Since its introduction in the 1970s, CT has revolutionized diagnostic radiology by enabling the visualization of internal structures with high spatial resolution and three-dimensional reconstruction capabilities. Unlike conventional radiography, which produces a single projection image, CT acquires multiple X-ray measurements from different angles around the patient and uses computer algorithms to reconstruct the corresponding anatomical slices.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.4\textwidth]{immagini/cap1/pet_CT.png} 
-    \caption{} 
-    \label{fig:pet_CT} 
+    \includegraphics[width=0.7\textwidth]{immagini/cap1/rad_ct1.png} 
+    \caption{On the left (figure a.) we can see a chest radioraphy, on the right (figure b.) we can see a CT scan of the same area. The CT scan provides a much more detailed view of the internal structures, allowing for better diagnosis and treatment planning.}
+    \label{fig:ct_scanner}
 \end{figure}
 
-Computed Tomography (CT) is a non invasive imaging tecnique that uses  X-rays and computer processing to create detailed cross-sectional images (or slices) of the body. 
+CT plays a crucial role in clinical practice due to its ability to provide fast, accurate, and non-invasive diagnostic information for a wide range of applications. Modern CT scanners are equipped with advanced technologies that significantly improve image quality, reduce scan time, and minimize radiation dose.
+
+
+This chapter provides an overview of the main aspects of CT imaging that are relevant for medical physics applications. The first part briefly describes the experimental setup of a CT scanner, the second part focuses on the mathematical principles behind image reconstruction, highlighting the algorithms used to convert projection data into tomographic slices. Finally, the chapter introduces the concept of image post-processing, with particular attention to windowing and its impact on image interpretation.
+
 \section{Tomography setup}
-L'idea dietro una tomografia è quella di ottenere un'immagine tridimensionale di un oggetto a partire da una serie di immagini bidimensionali ottenute da diverse angolazioni.
-Per questo motivo, un tomografo è composto, come tutti i sistemi per misurare radiazioni, da una sorgente di radiazioni (un tubo a raggi X) e da una serie di rivelatori di particelle. Per far si che vengano acquisite diverse proiezioni a diverse angolazioni, il tubo a raggi X e i rivelatori sono montati su un supporto rotante che permette di ruotare il sistema attorno al paziente o in generale all'oggetto da esaminare.
+The basic idea behind tomography is to obtain a three-dimensional image of an object from a series of two-dimensional images acquired from different angles.
+For this purpose, a CT scanner consists, like any radiation measurement system, of a radiation source (an X-ray tube) and an array of particle detectors. To acquire projections from multiple angles, the X-ray tube and the detectors are mounted on a rotating gantry, which allows the system to rotate around the patient or, more generally, around the object being examined.
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.45\textwidth]{immagini/cap1/CT.png} 
@@ -27,8 +24,8 @@ Per questo motivo, un tomografo è composto, come tutti i sistemi per misurare r
     \label{fig:tomografia}
 \end{figure}
 
-Come si nota in figura \ref{fig:tomografia}, i detector non sono disposti in un piano perpendicolare alla sorgente di raggi X, ma lungo un arco di circonferenza per far si che i pixel della proiezione abbiano tutti la stessa dimensione reale e che quindi non ci siano distorsioni dimensionali. 
-
+As shown in Figure \ref{fig:tomografia}, the detectors are not arranged on a plane perpendicular to the X-ray source, but rather along a circular arc. This configuration ensures that all pixels in the projection correspond to the same physical size, thus avoiding geometric distortions in the reconstructed image.
+Depending on the scanner design, the acquisition can be performed in a step-and-shoot mode or using continuous rotation, as in helical (spiral) CT. The X-ray beam is collimated into a fan or cone shape to cover the entire detector array. Each detector element typically consists of a scintillator coupled to a photodiode, which converts the X-ray photons into an electrical signal proportional to the received dose. Synchronizing the gantry rotation with data acquisition allows the collection of a sufficient number of projections to ensure accurate image reconstruction.
 \begin{figure}[!ht]
     \centering
     \includegraphics[width=0.7\textwidth]{immagini/cap1/setup.png} 
