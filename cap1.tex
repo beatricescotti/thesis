@@ -15,92 +15,117 @@ This chapter provides an overview of the main aspects of CT imaging that are rel
 
 \section{Tomography setup}
 The basic idea behind tomography is to obtain a three-dimensional image of an object from a series of two-dimensional images acquired from different angles.
-For this purpose, a CT scanner consists, like any radiation measurement system, of a radiation source (an X-ray tube) and an array of particle detectors. To acquire projections from multiple angles, the X-ray tube and the detectors are mounted on a rotating gantry, which allows the system to rotate around the patient or, more generally, around the object being examined.
+For this purpose, a CT scanner consists, like any radiation measurement system, of a radiation source (an X-ray tube) and an array of particle detectors. To acquire projections from multiple angles, typically ranging from 0 to 180 degrees, the X-ray tube and the detectors are mounted on a rotating gantry, which allows the system to rotate around the patient or, more generally, around the object being examined. 
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.45\textwidth]{immagini/cap1/CT.png} 
-    \caption{} 
-    \label{fig:tomografia}
-\end{figure}
-
-As shown in Figure \ref{fig:tomografia}, the detectors are not arranged on a plane perpendicular to the X-ray source, but rather along a circular arc. This configuration ensures that all pixels in the projection correspond to the same physical size, thus avoiding geometric distortions in the reconstructed image.
+As shown in Figure \ref{fig:CT_detector}, the detectors are not arranged on a plane perpendicular to the X-ray source, but rather along a circular arc. This configuration ensures that all pixels in the projection correspond to the same physical size, thus avoiding geometric distortions in the reconstructed image.
 Depending on the scanner design, the acquisition can be performed in a step-and-shoot mode or using continuous rotation, as in helical (spiral) CT. The X-ray beam is collimated into a fan or cone shape to cover the entire detector array. Each detector element typically consists of a scintillator coupled to a photodiode, which converts the X-ray photons into an electrical signal proportional to the received dose. Synchronizing the gantry rotation with data acquisition allows the collection of a sufficient number of projections to ensure accurate image reconstruction.
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.7\textwidth]{immagini/cap1/setup.png} 
-    \caption{In the frontal view we can see, in order, the X-ray tube (radiation source), the rotating gantry (support for the X-ray tube and detectors), the field of measurement (where the patient or the object is allocated), the anti scatter collimators (to reduce the amount of scattered radiation reaching the detectors), and the detectors (which measure the intensity of the X-rays after they pass through the object). In the lateral view we can see the presence of colimators, used to adjust the narrowness of the beam depending on the type of scan and the area of interest.} 
+    \includegraphics[width=0.8\textwidth]{immagini/cap1/setup.png} 
+    \caption{In the frontal view we can see, in order, the X-ray tube (radiation source), the rotating gantry (support for the X-ray tube and detectors), the field of measurement (where the patient or the object is allocated), the anti scatter collimators (to reduce the amount of scattered radiation reaching the detectors), and the detectors (which measure the intensity of the X-rays after they pass through the object). In the lateral view we can see the presence of collimators, used to adjust the narrowness of the beam depending on the type of scan and the area of interest.} 
     \label{fig:CT_detector}
 \end{figure}
+\FloatBarrier 
 
 \section{Image Reconstruction}
-Una radiografia è una proiezione bidimensionale della radizione che attraversa un oggetto tridimensionale, il che mi dà diverse ambiguità se voglio ricostruire il vero profilo dell'oggetto.
-Una tomografia è invece un insieme di proiezioni dell'oggetto ottenute a diverse angolazioni.
-Fare una tomografia, quindi, consiste nel misurare molti integrali di radiazione lungo diverse direzioni, per poi ricostruire l'immagine tridimensionale dell'oggetto in questione.
 
-\subsection{Mathematical Implementation}
-The mathematical model of a tomographic reconstruction is based on the Radon transform, which describes how the projection of a function (the object to be reconstructed) can be obtained by integrating the function along straight lines.
-Given the function \( f(x,y) \), that represents the 2D density of the object to be reconstructed and a certain projection at the angle \( \theta \), the path of each X-ray can be described by the straight line:
-\begin{equation}
-    x \cos(\theta) + y \sin(\theta) = s
-\end{equation}
-where \( s \) is the distance from the origin to the line along which the X-ray is traveling. The CT measurement corresponds to an integration of the funciotn \( f(x,y) \) along such a ray:
-\begin{equation}
-    p(s,\theta) = \int_{-\infty}^{+\infty} f(x,y) \delta(x \cos(\theta) + y \sin(\theta) - s) dx dy
-\end{equation}
-where \( p(s,\theta) \) is the projection of the function \( f(x,y) \), and the Dirac delta function \( \delta(x \cos(\theta) + y \sin(\theta) - s) \) ensures that the integration is performed only along the line defined by the angle \( \theta \) and the distance \( s \).
-We can now define the \textbf{Radon transform \( R \)} as the 1D projection (or radiograph) of the 2D function \( f(x,y) \) at the angle \( \theta \).
-\begin{equation}
-    P = R\cdot f
-\end{equation}
+In computed tomography (CT), image reconstruction refers to the process of transforming raw projection data, acquired from different angles, into a cross-sectional image of the scanned object. The core idea is to recover a 2D function \( f(x, y) \) — representing the internal structure — from its projections. Each projection contains information about how much an X-ray beam is attenuated as it travels through the object along a certain direction.
+
+\subsection*{1. The Radon Transform}
+
+Mathematically, each X-ray beam travels along a straight line. For a beam oriented at angle \( \theta \), the line is defined by:
+\[
+x \cos\theta + y \sin\theta = s
+\]
+where \( s \) is the perpendicular distance from the origin to the line.
+
+The projection \( p(s, \theta) \) is obtained by integrating the object's density \( f(x, y) \) along that line:
+\[
+p(s, \theta) = \int_{-\infty}^{+\infty} f(x, y)\, \delta(x \cos\theta + y \sin\theta - s)\, dx\, dy
+\]
+This is called the \textbf{Radon transform} of the function \( f(x, y) \).
+
+\subsection*{2. The Fourier Slice Theorem}
+
+To reconstruct the image, a key result is the \textbf{Fourier Slice Theorem}. It says that the 1D Fourier transform of a projection at angle \( \theta \) gives a slice of the 2D Fourier transform of \( f(x, y) \) taken in the same direction.
+
+We compute the 1D Fourier transform of the projection:
+\[
+P(\theta, u) = \int_{-\infty}^{+\infty} p(s, \theta)\, e^{-2\pi i u s}\, ds
+\]
+
+Plugging in the expression for \( p(s, \theta) \), we get:
+\[
+P(\theta, u) = \iint f(x, y)\, e^{-2\pi i u (x \cos\theta + y \sin\theta)}\, dx\, dy
+\]
+
+This expression matches the 2D Fourier transform of \( f(x, y) \), evaluated at:
+\[
+u_x = u \cos\theta,\quad u_y = u \sin\theta
+\]
+so we can write:
+\[
+P(\theta, u) = F(u \cos\theta, u \sin\theta)
+\]
+
+In other words, each projection gives us a radial slice of the 2D Fourier transform of the image.
+
+\subsection*{3. Inverse Transform and Filtering}
+
+If we collect projections over many angles, we can build the 2D Fourier space of the image. Then, to reconstruct \( f(x, y) \), we apply the inverse 2D Fourier transform:
+\[
+f(x, y) = \iint F(u_x, u_y)\, e^{2\pi i (u_x x + u_y y)}\, du_x\, du_y
+\]
+
+Switching to polar coordinates:
+\[
+u_x = u \cos\theta,\quad u_y = u \sin\theta
+\]
+the Jacobian of the transformation gives:
+\[
+du_x\, du_y = |u|\, du\, d\theta
+\]
+
+Substituting into the inverse Fourier formula:
+\[
+f(x, y) = \int_{0}^{\pi} \int_{-\infty}^{+\infty} |u|\, P(\theta, u)\, e^{2\pi i u (x \cos\theta + y \sin\theta)}\, du\, d\theta
+\]
+
+Here, the factor \( |u| \) acts as a high-pass filter, enhancing high-frequency components and correcting for the blurring introduced during projection.
+The equation above gives the foundation for the \textbf{Filtered Back Projection} algorithm, one of the most common reconstruction methods in CT. It works as follows:
+\begin{enumerate}
+    \item Acquire projections \( p(s, \theta) \) at many angles \( \theta \in [0, \pi] \).
+    \item Compute their 1D Fourier transforms \( P(\theta, u) \).
+    \item Multiply by \( |u| \) (or an equivalent ramp-like filter) to enhance sharpness.
+    \item Invert the Fourier transform to get filtered projections.
+    \item Back-project the filtered projections over the image domain and sum them.
+\end{enumerate}
+
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.5\textwidth]{immagini/cap1/projection.png} 
-    \caption{} 
-    \label{fig:radon}
-\end{figure}
-
-Now, if we take the 1D Fourier transform \( P(\theta, u) \) of the projection data \( p(s, \theta) \):
-\begin{equation}
-    P(\theta, u) = \int_{-\infty}^{+\infty} p(s, \theta) e^{-2\pi i u s} ds = \int \int dx dy f(x,y) e^{2\pi i u (x \cos\theta + y \sin\theta)}
-\end{equation}
-
-and we compare to the general 2D Fourier transform of the function \( f(x,y) \):
-\begin{equation}
-    F(u_x, u_y) = \int \int dx dy f(x,y) e^{-2\pi i (u_x x + u_y y)}
-\end{equation}
-where \( u_x = u \cos\theta \) and \( u_y = u \sin\theta \), we can see that the Radon transform is related to the 2D Fourier transform by the following relationship:
-\begin{equation}
-    P(\theta, u) = F(u \cos\theta, u \sin\theta)
-\end{equation}
-This means that 1D fourier transform of the projection $Rf(s, \theta)$ is equal to the 2D fourier transform of $f(x,y)$ in (\( u_x, u_y \)) coordinates, where \( u_x = u \cos\theta \) and \( u_y = u \sin\theta \).
-
-To calculate the original function \( f(x,y) \), let's do the Fourier antitransform: 
-\begin{equation}
-    f(x,y) = \int \int du_x du_y F(u_x, u_y) e^{2\pi i (u_x x + u_y y)}
-\end{equation}
-Now we can substitute \( u_x = u \cos\theta \) and \( u_y = u \sin\theta \) to finally obtain:
-\begin{equation}
-    f(x,y) = \int_{0}^{\pi} d\theta \int_{-\infty}^{+\infty} du |u| P(\theta, u) e^{2\pi i u (x \cos\theta + y \sin\theta)} 
-\end{equation}
-the absolute value of \( u \) is the jacobian of the transformation: \( du_x du_y = |u| d\theta du \) .
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{immagini/cap1/radon.png} 
-    \caption{The Radon transform is a mathematical operation that transforms a function defined in the spatial domain into a function defined in the projection domain. It is used in computed tomography to reconstruct images from projection data.} 
+    \includegraphics[width=0.7\textwidth]{immagini/cap1/radon.png}
+    \caption{Radon transform and reconstruction via filtered back projection. Each projection contributes a slice in frequency space; the image is recovered by inverse Fourier transform.}
     \label{fig:radon_transform}
 \end{figure}
 
-The absolute value of $u$ mathematically is the Jacobian of the coordinate transformation, but has also a physical meaning, because is filtering the high frequency noise from the image, being a low-pass filter.
-The Radon transform with the absolute value of \( u \) is called the \textbf{filtered back projection} (FBP) and is the most common method for reconstructing images from CT data.
+The filtered back projection is fast and effective, which is why it is still widely used in clinical CT. However, modern scanners often integrate more advanced techniques such as iterative reconstruction or machine learning, which can offer better noise suppression and lower radiation dose. Nevertheless, understanding the Radon transform and the Fourier Slice Theorem provides deep insight into how tomographic images are formed.
 
 
 \section{Windowing}
-In computed tomography (CT), the intensity values of the pixels are quantified in \textbf{Hounsfield units (HU)}, a standardized scale that reflects the radiodensity of the tissue. This scale is defined relative to the attenuation coefficients of water and air:
+
+The pixel values are quantified in \textbf{Hounsfield units (HU)}, a standardized scale that reflects the radiodensity of the tissue. This scale is defined relative to the attenuation coefficients of water and air:
 \begin{equation}
     HU_{tissue} = 1000 \times \dfrac{\mu_{tissue} - \mu_{water}}{\mu_{water}-\mu_{air}}
 \end{equation}
 where $\mu$ represents the linear attenuation coefficient. Key reference points: water = 0 HU for definition, air = -1000 HU. \\
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.65\textwidth]{immagini/other_windowing.png}
+    \caption{CT Hounsfield Unit (HU) ranges for key tissues. Highlighted regions show typical HU values for diagnostic reference, from dense compact bone ($\sim 3000$ HU ) to air ($1000$ HU), with soft tissues ($20-80$ HU) and fluids (blood $\sim 45$ HU, water $0$ HU) in intermediate ranges.}
+    \label{fig:general_windowing}
+\end{figure}
+
 \textbf{Windowing} is a technique used in computed tomography (CT) to \textbf{enhance the visibility of specific tissues or structures within the body.} It involves adjusting the range of Hounsfield units (HU) displayed in the CT image, allowing radiologists to focus on particular types of tissues, such as bones, soft tissues, or air-filled spaces. The window width and center determine the contrast and brightness of the image, respectively.
 \begin{itemize}
     \item \textbf{Window width} (WW): This parameter controls the range of Hounsfield units displayed in the image. A narrow window width enhances the contrast between tissues with similar densities, while a wider window width allows a broader range of densities to be visualized.
@@ -108,33 +133,30 @@ where $\mu$ represents the linear attenuation coefficient. Key reference points:
 \end{itemize}
 The choice of window width and level depends on the specific clinical question and the type of tissue being examined. 
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\textwidth]{immagini/other_windowing.png}
-    \caption{CT Hounsfield Unit (HU) ranges for key tissues. Highlighted regions show typical HU values for diagnostic reference, from dense compact bone ($\sim 3000$ HU ) to air ($1000$ HU), with soft tissues ($20-80$ HU) and fluids (blood $\sim 45$ HU, water $0$ HU) in intermediate ranges.}
-    \label{fig:general_windowing}
-\end{figure}
 
-\begin{figure}
+\begin{figure}[h!]
     \centering
-    \includegraphics[width=0.75\textwidth]{immagini/windowing.png}
+    \includegraphics[width=0.65\textwidth]{immagini/windowing.png}
     \caption{Standard CT windowing settings for different anatomical structures. Full CT value range ([-1000, 3000] HU). Clinical presets with window center (WC) and width (WW) values for bone (WC=1000, WW=2500), mediastinum (WC=-50, WW=400), and lung (WC=-600, WW=1700) visualization.}
     \label{fig:windowing_lung}
 \end{figure}
 
 
+\section{CT Planes}
 
-\section{CT planes}
-In computed tomography (CT), the images are typically acquired in three orthogonal planes: axial, coronal, and sagittal. Each plane provides a different perspective of the anatomical structures within the body.
+Images can be visualized in three standard orthogonal planes: axial, coronal, and sagittal. Each plane offers a unique perspective on anatomical structures, aiding in comprehensive clinical assessment.
+
 \begin{itemize}
-    \item \textbf{Axial}: horizontal plane that divides the body into upper and lower parts.
-    \item \textbf{Coronal}: vertical plane that divides the body into anterior (front) and posterior (back) parts.
-    \item \textbf{Sagittal}: vertical plane that divides the body into left and right parts.
+    \item \textbf{Axial plane} (transverse): A horizontal plane that divides the body into superior (upper) and inferior (lower) parts. It is the primary acquisition plane in most CT scans.
+    
+    \item \textbf{Coronal plane}: A vertical plane that divides the body into anterior (front) and posterior (back) parts. Often used for viewing the frontal anatomy.
+    
+    \item \textbf{Sagittal plane}: A vertical plane that divides the body into left and right portions. It is particularly useful for evaluating asymmetries between the two sides.
 \end{itemize}
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=0.6\textwidth]{immagini/cap1/planes.jpg}
+    \includegraphics[width=0.4\textwidth]{immagini/cap1/planes.jpg}
     \caption{CT planes: axial, coronal, and sagittal. The axial plane is horizontal, the coronal plane is vertical and divides the body into front and back, and the sagittal plane is vertical and divides the body into left and right.}
     \label{fig:ct_planes}
 \end{figure}
