@@ -9,6 +9,7 @@ The following are some standard types of tasks in machine learning:
 \begin{itemize}
     \item \textbf{Classification:} Assigning labels to data points based on learned patterns (e.g., e-mail spam detection).
     \item \textbf{Regression:} Predicting continuous values based on input features (e.g., predicting house prices). In regression, the penalty for an incorrect prediction depends on the magnitude of the difference between the true and predicted values, in contrast with classification problem, where there is typically no notion of closeness between various categories. 
+    \item \textbf{Object detection:} Identifying and localizing objects within images or videos (e.g., detecting tumours in lung CT scans).
     \item \textbf{Clustering:} Grouping similar data points together without predefined labels.
     \item \textbf{Anomaly detection:} Identifying unusual patterns that do not conform to expected behavior.
     \item \textbf{Ranking}: Ordering items based on their relevance or importance.
@@ -37,7 +38,7 @@ Currently, deep learning-based object detection frameworks can be classified in 
 The YOLOv8 architecture is composed of two major parts, namely the \textbf{backbone} and the \textbf{head}, both of which use a fully convolutional neural network. 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{immagini/yolo_architecture.png}
+    \includegraphics[width=0.8\textwidth]{immagini/cap2/yolo_architecture.png}
     \caption{Architecture of YOLOv8. The backbone extracts features from the input image, while the head predicts bounding boxes and class probabilities.}
     \label{fig:yolo_architecture}
 \end{figure}
@@ -51,8 +52,91 @@ The YOLOv8 framework can be used to perform computer vision tasks such as detect
 There are different versions of YOLOv8, each designed for different tasks and with different architectures. The most common versions are YOLOv8n, YOLOv8s, YOLOv8m, YOLOv8l and YOLOv8x, where the letter indicates the size of the model (n for nano, s for small, m for medium, l for large and x for extra large). The larger the model, the more parameters it has and the more computational resources it requires to train and run.
 
 \section{Object Detection Metrics}
-Object detection metrics are used to evaluate the performance of object detection algorithms. The most common metrics are precision, recall and mean Average Precision (mAP).
+A metric is a function that quantifies and evaluates the performance of a model. In the context of object detection, metrics are used to assess how well a model can detect and classify objects in images. 
 
+\subsection*{Intersection over Union (IoU)}
+When we talk about object detection, we often refer to the concept of \textbf{bounding boxes}. A bounding box is a rectangular box that is used to define the location of an object in an image, typically represented by its top-left corner coordinates (x, y), width, and height, or top-left and bottom-right coordinates. The bounding box is used to localize the object within the image and is often used in conjunction with a classification label to identify the object.
+Intersection over Union (IoU) is a metric used to evaluate the accuracy of the bounding box detection. It measures the overlap between the predicted and the ground truth box. The IoU is calculated as follows:
+\begin{equation}
+    IoU = \frac{Area_{Intersection}}{Area_{Union}} = \frac{A_{pred} \cap A_{gt}}{A_{pred} \cup A_{gt}}
+\end{equation}
+The IoU value ranges from 0 to 1, where 0 indicates no overlap and 1 indicates perfect overlap. A common threshold for considering a detection as a true positive is an IoU of 0.5 or higher.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.45\textwidth]{immagini/cap2/iou.png}
+    \caption{}
+    \label{fig:iou}
+\end{figure}
+
+\begin{algorithm}
+    \caption{Intersection over Union (IoU) between two bounding boxes}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} Boxes $A = (x_A, y_A, w_A, h_A)$ and $B = (x_B, y_B, w_B, h_B)$
+        
+        \State \textbf{Compute bottom-right corners:}
+        \Statex \hspace{\algorithmicindent} $x2_A = x_A + w_A$, \quad $y2_A = y_A + h_A$
+        \Statex \hspace{\algorithmicindent} $x2_B = x_B + w_B$, \quad $y2_B = y_B + h_B$
+        
+        \State \textbf{Compute intersection rectangle:}
+        \Statex \hspace{\algorithmicindent} $x_{\text{int}}^{1} = \max(x_A, x_B)$, \quad $y_{\text{int}}^{1} = \max(y_A, y_B)$
+        \Statex \hspace{\algorithmicindent} $x_{\text{int}}^{2} = \min(x2_A, x2_B)$, \quad $y_{\text{int}}^{2} = \min(y2_A, y2_B)$
+
+        \State \textbf{Compute intersection area:}
+        \Statex \hspace{\algorithmicindent} $w_{\text{int}} = \max(0, x_{\text{int}}^{2} - x_{\text{int}}^{1})$
+        \Statex \hspace{\algorithmicindent} $h_{\text{int}} = \max(0, y_{\text{int}}^{2} - y_{\text{int}}^{1})$
+        \Statex \hspace{\algorithmicindent} $A_{\text{int}} = w_{\text{int}} \times h_{\text{int}}$
+        
+        \State \textbf{Compute areas of each box:}
+        \Statex \hspace{\algorithmicindent} $A_A = w_A \times h_A$, \quad $A_B = w_B \times h_B$
+        
+        \State \textbf{Compute union area:}
+        \Statex \hspace{\algorithmicindent} $A_{\text{union}} = A_A + A_B - A_{\text{int}}$
+        
+        \State \textbf{Return:} $\text{IoU} = \dfrac{A_{\text{int}}}{A_{\text{union}}}$
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection*{Average Precision and Average Recall}
+To evaluate the quality of the predictions of an object detection model, we use the concepts of \textbf{precision} and \textbf{recall}.
+\begin{itemize}
+    \item \textbf{Precision} measures the proportion of true positive predictions among all positive predictions made by the model. It is defined as:
+    \begin{equation}
+        Precision = \frac{TP}{TP + FP}
+    \end{equation}
+    where \( TP \) is the number of true positives and \( FP \) is the number of false positives.
+    
+    \item \textbf{Recall} measures the proportion of true positive predictions among all actual positive instances in the dataset. It is defined as:
+    \begin{equation}
+        Recall = \frac{TP}{TP + FN}
+    \end{equation}
+    where \( FN \) is the number of false negatives.
+\end{itemize}
+
+In an object detection task it is not immediate to define if a prediction is a true positive or a false positive, since the model predicts a bounding box and a class label for each object in the image. To determine if a prediction is a true positive, we need to compare the predicted bounding box with the ground truth bounding box and check if the IoU is above a certain threshold (e.g., 0.5). If the IoU is above the threshold, the prediction is considered a true positive; otherwise, it is considered a false positive.
+\begin{equation}
+    P_{\alpha}(box_{gt}, box_{pred}) =
+    \begin{cases}
+        \text{TP} & \text{if } IoU(box_{gt}, box_{pred}) \geq \alpha \\
+        \text{FP} & \text{otherwise}
+    \end{cases}
+\end{equation}
+where \( box_{gt} \) is the ground truth bounding box, \( box_{pred} \) is the predicted bounding box and \( \alpha \) is the IoU threshold.
+
+We can define the \textbf{Average Precision (AP)} as the area under the precision-recall curve, which is obtained by plotting precision against recall for different IoU thresholds. The AP is a single value that summarizes the model's performance across different levels of precision and recall. It is calculated as follows:
+\begin{equation}
+    AP = \int_{0}^{1} P_{\alpha}(box_{gt}, box_{pred}) dR_{\alpha}
+\end{equation}
+where \( P_{\alpha} \) is the precision at a given IoU threshold \( \alpha \) and \( R_{\alpha} \) is the recall at the same threshold.
+
+\subsection*{Mean Average Precision (mAP)}
+If we define \textbf{Average Precision} for each class \( c \) as \( AP_c \), we can define the \textbf{Mean Average Precision (mAP)} as the average of the Average Precision values across all classes:
+\begin{equation}
+    mAP = \frac{1}{C} \sum_{c=1}^{C} AP_c
+\end{equation}
+
+The most used treshold of IoU we use to calculate the mAP is 0.5, and in this case we refer to it as mAP@0.5. However, it is common to use multiple IoU thresholds to calculate the mAP, such as mAP@0.5:0.95, which averages the AP values across IoU thresholds from 0.5 to 0.95 in increments of 0.05.
 
 \section{Transfer learning}
 
