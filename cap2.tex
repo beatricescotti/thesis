@@ -1,5 +1,3 @@
-\setlength{\headheight}{14.5pt} % Adjust head height
-\addtolength{\topmargin}{-2.5pt} % Compensate for the increased head height
 \chapter{Machine Learning in a nutshell} 
 
 Machine learning is a subfield of artificial intelligence that focuses on the development of algorithms and statistical models that enable computers to perform tasks without explicit instructions. Instead, these systems learn from data, identifying patterns and making decisions based on the information they have been trained on.
@@ -36,7 +34,7 @@ Currently, deep learning-based object detection frameworks can be classified in 
 
 \subsection{Architecture of YOLOv8}
 The YOLOv8 architecture is composed of two major parts, namely the \textbf{backbone} and the \textbf{head}, both of which use a fully convolutional neural network. 
-\begin{figure}
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=0.8\textwidth]{immagini/cap2/yolo_architecture.png}
     \caption{Architecture of YOLOv8. The backbone extracts features from the input image, while the head predicts bounding boxes and class probabilities.}
@@ -98,46 +96,76 @@ The IoU value ranges from 0 to 1, where 0 indicates no overlap and 1 indicates p
     \end{algorithmic}
 \end{algorithm}
 
-\subsection*{Average Precision and Average Recall}
-To evaluate the quality of the predictions of an object detection model, we use the concepts of \textbf{precision} and \textbf{recall}.
+\subsection*{Precision and Recall}
+Precision and recall are fundamental metrics used to evaluate the performance of object detection models. These metrics provide valuable insights into the model's ability to identify objects of interest within images. 
+Let's define some fundamental concepts before diving into precision and recall:
 \begin{itemize}
-    \item \textbf{Precision} measures the proportion of true positive predictions among all positive predictions made by the model. It is defined as:
+    \item \textbf{True Positive (TP):} These are istances where the model currently identifies and localize objectys, and the intersection over union (IoU) score between the predicted and the ground truth bounding box is equal or greater then a specified treshold.
+    \item \textbf{False Positive (FP):} These are cases where the model incorrectly identifies an object that does not exist in the ground truth or where the predicted box has an IoU score below tha define treshold.
+    \item \textbf{False Negative (FN):} These rapresent instances where the model fails to detect an object that is present in the ground truth. This means that the model has not detected an object that is present in the image, resulting in a missed detection.
+    \item \textbf{True Negative (TN):} Not applicable in object detection. It represents correcly rejecting the absence of objects, but in object detection, the goal is to detect objects rather than the absence of them.
+\end{itemize}
+
+\begin{figure}[!ht]
+\centering
+\begin{minipage}[t]{0.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap2/TP.png}
+    \caption{The object is there, and the model detects it, with an IoU above treshold.}
+    \label{fig:TP}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap2/FP.png}
+    \caption{The object is there, but the predicted box has an IoU below the treshold.}
+    \label{fig:FP}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap2/FN.png}
+    \caption{The object is there, and the model doesn't detect it. The ground truth object has no prediction.}
+    \label{fig:FN}
+\end{minipage}
+\caption{Ground truth box is the green rectangle, while the predicted box is the red rectangle.}
+\label{fig:TP_FP_FN}
+\end{figure}
+
+Let's not define the core metrics: 
+\begin{itemize}
+    \item \textbf{Precision}: Is a critical metric in model evaluation as it serves to quantify the accuracy of the positive predictions made by the model. It specifically assesses how well the model distinguishes true objects from false positives. In essence, precision provides insight into the model’s ability to make positive predictions that are indeed accurate. A high precision score indicates that the model is skilled at avoiding false positives and provides reliable positive predictions.
     \begin{equation}
         Precision = \frac{TP}{TP + FP}
     \end{equation}
-    where \( TP \) is the number of true positives and \( FP \) is the number of false positives.
-    
-    \item \textbf{Recall} measures the proportion of true positive predictions among all actual positive instances in the dataset. It is defined as:
+
+    \item \textbf{Recall}: also known as sensitivity or true positive rate, is another essential metric used in evaluating model performance, especially in object detection tasks. Recall measures the model’s capability to capture all relevant objects in the image. In essence, recall assesses the model’s completeness in identifying objects of interest. A high recall score indicates that the model effectively identifies most of the relevant objects in the data.
     \begin{equation}
         Recall = \frac{TP}{TP + FN}
     \end{equation}
-    where \( FN \) is the number of false negatives.
 \end{itemize}
-
-In an object detection task it is not immediate to define if a prediction is a true positive or a false positive, since the model predicts a bounding box and a class label for each object in the image. To determine if a prediction is a true positive, we need to compare the predicted bounding box with the ground truth bounding box and check if the IoU is above a certain threshold (e.g., 0.5). If the IoU is above the threshold, the prediction is considered a true positive; otherwise, it is considered a false positive.
-\begin{equation}
-    P_{\alpha}(box_{gt}, box_{pred}) =
-    \begin{cases}
-        \text{TP} & \text{if } IoU(box_{gt}, box_{pred}) \geq \alpha \\
-        \text{FP} & \text{otherwise}
-    \end{cases}
-\end{equation}
-where \( box_{gt} \) is the ground truth bounding box, \( box_{pred} \) is the predicted bounding box and \( \alpha \) is the IoU threshold.
-
-We can define the \textbf{Average Precision (AP)} as the area under the precision-recall curve, which is obtained by plotting precision against recall for different IoU thresholds. The AP is a single value that summarizes the model's performance across different levels of precision and recall. It is calculated as follows:
+We can define the \textbf{Average Precision (AP)} as the area under the precision-recall curve, which is obtained by plotting precision against recall for different confidence thresholds \footnote{The confidence threshold is a tunable parameter used to filter out low-confidence predictions in object detection tasks. Each predicted bounding box is assigned a confidence score, typically representing the estimated probability that the detection both contains an object and correctly identifies its class. Varying this threshold affects the trade-off between precision and recall: lower thresholds increase recall but may introduce more false positives, whereas higher thresholds improve precision at the cost of reduced recall.}. The AP is a single value that summarizes the model's performance across different levels of precision and recall. It is calculated as follows:
 \begin{equation}
     AP = \int_{0}^{1} P_{\alpha}(box_{gt}, box_{pred}) dR_{\alpha}
 \end{equation}
 where \( P_{\alpha} \) is the precision at a given IoU threshold \( \alpha \) and \( R_{\alpha} \) is the recall at the same threshold.
+Precision signifies the accuracy of the model's positive predictions, while recall quantifies the model's ability to succesfully identify all relevant objects. AP achieves a harmonious balance between false positive and false negatives, providing a comprehensive evaluation of the model's performance. 
 
 \subsection*{Mean Average Precision (mAP)}
-If we define \textbf{Average Precision} for each class \( c \) as \( AP_c \), we can define the \textbf{Mean Average Precision (mAP)} as the average of the Average Precision values across all classes:
+Mean Average Precision (mAP) extends the concept of Average Precision (AP) by providing a global summary of a model’s performance across multiple object classes and, in some cases, multiple localization thresholds. While AP evaluates the precision-recall trade-off for a single class — by varying the confidence threshold and computing the area under the resulting precision-recall curve — mAP averages these AP values to reflect the model’s overall detection capabilities.
 \begin{equation}
-    mAP = \frac{1}{C} \sum_{c=1}^{C} AP_c
+    mAP = \frac{1}{N} \sum_{i=1}^{N} AP_i
 \end{equation}
+where \( N \) is the number of classes and \( AP_i \) is the Average Precision for class \( i \).
 
-The most used treshold of IoU we use to calculate the mAP is 0.5, and in this case we refer to it as mAP@0.5. However, it is common to use multiple IoU thresholds to calculate the mAP, such as mAP@0.5:0.95, which averages the AP values across IoU thresholds from 0.5 to 0.95 in increments of 0.05.
-
+In practice, several versions of mAP are commonly reported. mAP@0.5 refers to the mean AP calculated at a fixed Intersection over Union (IoU) threshold of 0.5. mAP@[0.5:0.95], computes the average AP across ten IoU thresholds ranging from 0.5 to 0.95 (in increments of 0.05), providing a more rigorous and comprehensive evaluation that accounts for both classification and localization accuracy.
+\begin{equation}
+    mAP@50 = \frac{1}{N} \sum_{k=1}^{N} AP_K@50
+\end{equation}
+\begin{equation}
+    mAP@[50:95] = \frac{1}{N(95-50)}\sum_{\alpha = 50}^{\alpha = 95}\sum_{k=1}^{N} AP_K@\alpha
+\end{equation}
+where \( N \)  is the number of classes and \(\alpha\) is the IoU threshold.
 \section{Transfer learning}
-
+Transfer learning is a machine learning technique that leverages knowledge gained from one task to improve performance on a different but related task. It is particularly useful when the target task has limited labeled data, allowing models to benefit from pre-trained representations learned from larger datasets. Transfer learning can be applied in various domains, including computer vision, natural language processing, and speech recognition.
 \section{Curriculum learning}
