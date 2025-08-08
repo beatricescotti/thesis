@@ -167,5 +167,64 @@ In practice, several versions of mAP are commonly reported. mAP@0.5 refers to th
 \end{equation}
 where \( N \)  is the number of classes and \(\alpha\) is the IoU threshold.
 \section{Transfer learning}
-Transfer learning is a machine learning technique that leverages knowledge gained from one task to improve performance on a different but related task. It is particularly useful when the target task has limited labeled data, allowing models to benefit from pre-trained representations learned from larger datasets. Transfer learning can be applied in various domains, including computer vision, natural language processing, and speech recognition.
-\section{Curriculum learning}
+Transfer learning is a machine learning technique in which knowledge gained through one task or data set is used to improve the performance of models on another related task and/or on a different data set. 
+In other words, it uses what has been learned in one setting to improve generalization in another. The applications of transfer learning in deep learning are very interesting because models need a big amount of labeled data to learn and gain knoweledge, and a lot of times such big datasets are not avaiable.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap2/transfer_learning.png}
+    \caption{}
+    \label{fig:transfer_learning}
+\end{figure}
+Traditional learning processes create a new model for each new activity based on the labeled data available. This is because traditional machine learning algorithms assume that training and test data come from the same feature space, so if the data distribution changes or if the trained model is applied to a new dataset, users need to retrain a newer model from scratch, even if they want to carry out an activity similar to that of the first model. Transfer learning algorithms, on the other hand, take already trained models or networks as a starting point, then apply that model's knowledge, gained in a task or initial source data to a new, but related activity or target data.
+
+Depending on the amount of data available and the similarity between source domain and target domain, there are different transfer learning strategies:
+
+\begin{itemize}
+    \item{Feature extraction}: freezes most of the model, training only the head. It is useful with very little data and similar domains.
+    \item{Partial fine-tuning}: only the lowest layers freeze. Suitable for moderately different domains.
+    \item {Complete fine-tuning}: only the lowest layers freeze. Suitable for moderately different domains.
+\end{itemize}
+In the context of medical imaging, transfer learning has shown promising results. Models pre-trained on large natural image datasets (e.g. ImageNet, COCO) can learn general low-level features (such as edges, textures, and shapes) that are also present in medical images. Fine-tuning such models on smaller labeled medical datasets allows for improved performance even with limited annotated data, making transfer learning a valuable tool in the medical AI pipeline.
+
+The following chapters will explore specific cases of transfer learning applied to medical image datasets, comparing various pre-training strategies and model architectures.
+
+\section{Curriculum Learning}
+Curriculum Learning is a training strategy inspired by the way humans learn, initially tackling simple tasks and then moving on to more complex ones. Introduced by Bengio et al. in 2009 \cite{bengio2009curriculum}, this approach proposes to organize the training of a model according to an ordered sequence of examples, selected based on a difficulty criterion.
+
+Instead of presenting all data simultaneously and in random order, Curriculum Learning involves the progressive selection of subsets of data, which are introduced in a gradual manner during training. This controlled sequence allows the model to first acquire the simplest and most robust regularities, and then refine its predictive ability by tackling more complex cases.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap2/curr.png}
+    \caption{}
+    \label{fig:curriculum}
+\end{figure}
+
+An effective curriculum requires defining three basic components:
+\begin{itemize}
+    \item{Difficulty criterion}: is the mechanism through which a difficulty level is assigned to each example. It can be defined explicitly on the basis of known characteristics (eg geometric properties, data quality, object dimensions), or it can emerge automatically, for example by exploiting the loss obtained by the model during the early eras or the uncertainty of predictions.
+    \item{Pacing}:  is the function that regulates the pace at which the most difficult examples are introduced into training. Pacing can be defined a priori (e.g. by adding a certain number of examples to each epoch), or determined dynamically, for example by evaluating the performance of the model on a validation subset.
+    \item{Presentation order}: consists of the construction of a sequence of data (or subsets) to be presented to the model. This order can be fixed or updated during training, and strongly affects the effectiveness of the curriculum.
+\end{itemize}
+
+
+This type of approach has proven useful in scenarios where the data has significant variability, contains noisy or unbalanced examples, or when it is desired to accelerate the convergence of optimization. Furthermore, Curriculum Learning can help prevent the model from learning abnormal characteristics or statistical noise too early, thus improving generalization.
+
+\subsection*{Applications}
+In the visual field, a curriculum can be constructed in many ways: for example, a classification model can initially be trained on high-quality images and well-defined content, and then tackle more complex examples such as deformed, moving, partially occluded objects or present in unfavorable lighting conditions.
+In other contexts, such as the regression of physical quantities from images, the difficulty may depend on the structural variability of the visual content or the complexity of the information flow required for accurate prediction.
+
+\subsection*{Practical considerations}
+Despite the benefits observed in numerous works, the effectiveness of Curriculum Learning is highly dependent on
+\begin{itemize}
+    \item A correct definition of the difficulty;
+    \item An appropriate pacing;
+    \item the coherence of the curriculum with the final task.
+\end{itemize}
+
+In the absence of a clear criterion for distinguishing easy examples from difficult ones, or if pacing is poorly calibrated, the approach can even worsen performance compared to standard training.
+
+However, if well designed, Curriculum Learning can be a powerful tool for controlling training, especially in contexts where data distribution is uneven, the useful signal is weak or learning can benefit from gradual progression.
+
+
+
