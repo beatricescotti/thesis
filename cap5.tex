@@ -1,0 +1,154 @@
+\chapter{Medical Dataset}
+
+\section{NLST - National Lung Screening Trial Dataset}
+The aggressive and heterogeneous nature of lung cancer has thwarted efforts to reduce mortality from this cancer through the use of screening. 
+The advent of low-dose helical computed tomography (CT) altered the landscape of lung-cancer screening, with studies indicating that low-dose CT detects many tumors at early stages.
+ The National Lung Screening Trial (NLST) was conducted to determine whether screening with low-dose CT could reduce mortality from lung cancer.
+The NLST was a large, multicenter, randomized controlled trial that enrolled over 53,000 participants at high risk for lung cancer. 
+Participants were randomly assigned to receive either low-dose CT scans or standard chest X-rays. 
+The primary outcome was lung cancer mortality, with secondary outcomes including the detection of early-stage lung cancer and the impact of screening on overall mortality.
+
+Radiologists at the screening centers reviewed the images obtained at each of the three annual screening exams to check for signs of lung cancer.
+
+The image review was made without reference to any historical images. The radiologist recorded information about all visible abnormalities and assigned a preliminary screening result. A positive screening result (suspicious for lung cancer) was assigned if any non-calcified nodules or masses $\geq 4 mm$ in diameter were noted or if any other abnormalities were judged suspicious for lung cancer by the radiologist.
+
+\subsection{Dataset Pruning}
+The NLST dataset contains chest CT scans where each scan comprises multiple ($\sim 143$) axial slices. 
+Notably, not all slices include tumor lesions. The dataset was then pruned by filtering slices based on a provided CSV file that identifies slices containing clinically relevant findings. After pruning, approximately 9,000 slices remain with malignant lesions with $\geq 4 mm$ in diameter. 
+However, benign tumor slices lack bounding box annotations, which presents a limitation for detection tasks.
+
+The annotations are in the form of a CSV file that contains the following columns:
+\begin{itemize}
+    \item \textbf{PID}: Unique identifier for each patient.
+    \item \textbf{Slice Number}: The specific slice within the CT scan, which is also the name of the file.
+    \item \textbf{CT filter}: Indicates the type of filter applied to the CT scan.
+    \item \textbf{x, y, width, height}: Coordinates of the bounding box around the lesion, x and y represent the top-left corner of the bounding box, while width and height represent its dimensions.
+\end{itemize}
+
+\subsection{Extraction of the pixel array}
+The CT images are in the dicom format, which is a standard format for medical imaging data. Each CT scan consists of multiple slices, and each slice is represented as a 2D image. The pixel values in these images are typically stored in Hounsfield units (HU), which represent the radiodensity of the tissue.
+A dicom file contains:
+\begin{itemize}
+    \item \textbf{Pixel Array}: The pixel array is a 2D array of pixel values that represent the intensity of the image. Each pixel value corresponds to a specific location in the image and is typically stored as a 16-bit integer.
+    \item \textbf{Metadata}: The metadata contains information about the image, such as the patient's name, the acquisition date, the image orientation, pixel spacing, and slice thickness. This information is essential for interpreting the image correctly.
+\end{itemize}
+
+\subsection{Image Metadata}
+The metadata of a CT image contains important information about the image acquisition parameters and the physical characteristics of the image. The following are some key metadata fields commonly found in CT images:
+\begin{itemize}
+    \item \textbf{Pixel Spacing (mm)}: The physical distance between adjacent pixels in the x and y directions, typically measured in millimeters.
+    \item \textbf{Slice Thickness (mm)}: The thickness of each slice in the z direction, also measured in millimeters.
+    \item \textbf{Field of View (FOV) (cm)}: The physical dimension of the area captured in the image, typically measured in centimeters.
+    \item \textbf{Image Orientation}: The orientation of the image, which can be specified using a combination of row and column vectors.
+    \item \textbf{Image Position}: The position of the image in 3D space, typically specified using x, y, and z coordinates.
+\end{itemize}
+
+
+
+\section{DLCS - Duke Lung Cancer Screening Dataset}
+\subsection{Extraction of the 2D slices}
+\subsection{Dataset Pruning}
+
+\section{Pre processing the images}
+Medical image preprocessing is essential to train accurate tumor detection models. Raw scans often contain noise, inconsistent resolutions, or irrelevant regions that can mislead algorithms. Our pipeline standardizes the data through key steps: resampling ensures uniform resolution, windowing highlights tumor-relevant contrasts, and masking removes healthy tissue to focus analysis. These optimizations allow the model to learn meaningful patterns, improving its ability to detect tumors reliably across diverse clinical cases.
+\subsection*{Resampling}
+Since the CT images were acquired using different machines and protocols, the pixel spacing (i.e., the physical dimension per pixel or voxel) is not consistent across all scans, which in turn affects the apparent size of lesions. To standardize, we apply resampling to ensure that all voxels represent the same physical size in centimeters. Consequently, the pixel dimensions of the images may change.
+To determine a suitable uniform voxel size, the pixel spacing  was extracted from each image and computed the mean (x and y spacing is equal), resulting in: 
+
+\begin{equation*}
+    (\text{pixel spacing})_x = (\text{pixel spacing})_y = 0.623 mm
+\end{equation*}
+
+Then, using this target spacing, all images are resampled accordingly.
+It can be achived using SimpleITK, a medical imaging library, which provides a robust implementation for resampling. For example:
+
+\begin{algorithm}[H]
+    \caption{Resampling of DICOM Slices}
+    \begin{algorithmic}[1]
+    \State \textbf{Input:} 
+    \begin{itemize}
+        \item Directories $D$ containing DICOM slices
+        \item Target pixel spacing in $x$ and $y$: $t_x = t_y = 0.623$ mm
+    \end{itemize}
+    \State \textbf{Output:} Resampled PNG slices stored in output directory $D_{out}$
+    
+    \State $P \gets$ \texttt{ListFiles}$(D, "*.dcm")$
+    \For{each file $p \in P$}
+        \State $I \gets$ \texttt{ReadImage}$(p)$
+        \State $(s_x, s_y, s_z) \gets \texttt{GetSpacing}(I)$
+        \State $(n_x, n_y, n_z) \gets \texttt{GetSize}(I)$
+        \State $t_z \gets s_z$
+        \State $T \gets (t_x, t_y, t_z)$
+        \State $N[0] \gets \texttt{round}(n_x \cdot s_x / t_x)$
+        \State $N[1] \gets \texttt{round}(n_y \cdot s_y / t_y)$
+        \State $N[2] \gets 1$
+        \State $\text{resampler} \gets \texttt{ResampleImageFilter}()$
+        \State $\text{resampler}.\texttt{SetSize}(N)$
+        \State $\text{resampler}.\texttt{SetOutputSpacing}(T)$
+        \State $\text{resampler}.\texttt{SetOutputOrigin}(\texttt{GetOrigin}(I))$
+        \State $\text{resampler}.\texttt{SetOutputDirection}(\texttt{GetDirection}(I))$
+        \State $\text{resampler}.\texttt{SetInterpolator}(\texttt{sitkBSplineResampler})$
+        \State $I_r \gets \text{resampler}.\texttt{Execute}(I)$
+        \State $I_{2D} \gets \texttt{Extract}(I_r, (N[0], N[1], 0), (0,0,0))$
+        \State $A \gets \texttt{GetArrayFromImage}(I_{2D})$
+        \State $\texttt{SavePNG}(A, D_{out}, \texttt{basename}(p))$
+    \EndFor
+    \end{algorithmic}
+    \end{algorithm}
+    
+\subsection*{Padding}
+After resizing, all images now share a uniform pixel spacing, but their pixel dimensions differ. Since YOLOv8—the model employed in this thesis—requires square images of identical pixel size as input, a padding step is necessary.
+
+The padding is applied so that the original image is placed in the top-left corner of a black canvas, whose side length corresponds to the nearest multiple of 32 greater than or equal to the largest resampled image dimension:
+\begin{itemize}
+    \item{NLST}: 704x704 pixel, con uno spacing di 0.623 mm x 0.623 mm
+    \item{DLCS}: 736x736 pixel, con uno spacing di 0.7 mm x 0.7 mm
+\end{itemize}
+
+\begin{figure}[!ht]
+    \centering 
+    \includegraphics[width=\linewidth]{immagini/cap5/padded_469.png}
+    \caption{}
+\end{figure}
+
+\subsection*{Windowing}
+As described in Chapter 1, the range of intensity values in a CT scan depends on the tissue absorption coefficients, typically spanning approximately from -1000 to +3000 Hounsfield Units (HU). Because this range does not have fixed minimum or maximum limits, directly visualizing the full range is not practical, especially when converting images to formats like PNG, which support only a limited number of intensity levels.
+To effectively visualize relevant anatomical structures, we apply a process called windowing, which restricts the displayed intensity values to a specific range that highlights the tissues of interest. In this case, to emphasize lung structures, we set the window center at -600 HU and the window width at 1700 HU, values that are well established in the literature and illustrated in the accompanying figure.
+his means that only intensity values within the window boundaries—calculated as:
+\begin{equation*}
+    \text{window minimum} = -600 - \dfrac{1700}{2} = -1450
+\end{equation*}
+
+\begin{equation*}
+    \text{window maximum} = -600 + \dfrac{1700}{2} = + 250
+\end{equation*}
+
+—are displayed linearly. Any values outside this range are clipped to the nearest boundary value to avoid distortion.
+This windowing technique is applied consistently to all images from both datasets, resulting in enhanced visualization of pulmonary structures, as shown below:
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}{0.44\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap5/slice_DLCS_0001_DLCS_0001_01_n0.png}
+        \caption*{(a) Standard PNG conversion without windowing (0--255 mapping).}
+    \end{minipage}\hfill
+    \begin{minipage}{0.44\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap5/slice_DLCS_0001_DLCS_0001_01_n0_1.png}
+        \caption*{(b) PNG conversion with windowing (center = -600 HU, width = 1700 HU), enhancing lung structures.}
+    \end{minipage}
+    \caption{Comparison between standard intensity mapping and windowing applied to CT slices. The windowing technique improves contrast by focusing on relevant intensity ranges.}
+    \label{fig:windowing_comparison}
+\end{figure}
+
+The following figure illustrates the step-by-step processing of a representative CT slice. On the left, the original image is shown with its native dimensions and pixel spacing. In the middle, the image after resampling is presented, including updated spatial resolution parameters. Finally, on the right, the windowing technique is applied to enhance the visualization of pulmonary structures by adjusting the intensity range. Dimensions and spacing values are displayed above each image for clarity.
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap5/NLST.png}
+    \caption{}
+    \label{fig:final_preprocess}
+\end{figure}
+
+\subsubsection{RBG Windowing}
+\subsection{Masking}
