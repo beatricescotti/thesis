@@ -1,0 +1,140 @@
+\chapter{Hadronic Collisions and Jet Reconstruction}
+
+\section{High energy collisions in hadronic accelerators}
+
+In a hadronic collider, such as the LHC or the Tevatron, beams of hadrons—primarily protons and antiprotons—are collided at extremely high energies.
+Unlike electrons, protons are not elementary particles; they possess a complex internal structure composed of quarks and gluons. This internal structure is described by the parton distribution functions (PDFs), denoted in Fig. \ref{fig:hadronic_collisions} as $f_i(x_j, \mu_F)$, where $i$ indicates the parton type (quark or gluon), and $j$ refers to the beam. The PDF represents the probability of finding a parton of type $i$ carrying a fraction $x_j$ of the proton’s momentum at the time of collision.
+
+Therefore, when two protons $P_1$ and $P_2$ collide, the interaction does not occur between the protons themselves, but rather between their constituents—the partons—with momenta $x_jP_j$. The partons that do not participate in the hard scattering process are referred to as underlying events, as illustrated in the figure.
+
+When high-energy quarks are produced in the final state, they emit additional partons through a cascading process known as parton showering. This process continues until the energy scale drops sufficiently, at which point the partons recombine into observable hadrons in a process called hadronization.
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.55\textwidth]{immagini/cap3/hadron_scattering.png}
+    \caption{Schema di un collisione adronica. I protoni si scontrano e producono una cascata di particelle, che si trasformano in jet di particelle.} 
+    \label{fig:hadronic_collisions}
+\end{figure}
+
+\subsubsection{Jets}
+In order to reconstruct the primary event that occurred before the parton shower and hadronization, the strategy is to measure the energy of the final-state particles using calorimeters, and then group them based on their transverse momentum and direction. This procedure leads to the formation of what are known as jets.
+Jets are essentially the result of a clustering algorithm that groups final-state particles with similar transverse momentum and direction, allowing us to trace back to the primary parton-level event that initiated the particle cascade.
+
+
+\section{Useful variables to describe an hadronic process}
+In collider physics, the kinematic properties of particles are typically described using variables that are well suited to the cylindrical geometry of the detectors and to the characteristics of the collisions. Among these, the most commonly used are the transverse momentum $p_T$, the azimuthal angle $\phi$, and the pseudorapidity $\eta$.
+
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/coordinate.png}
+    \caption{Kinematic variables used in collider physics. The transverse momentum $p_T$ is the component of momentum perpendicular to the beam axis, $\phi$ is the azimuthal angle, and $\eta$ is the pseudorapidity.}
+    \label{fig:kinematic_variables}
+\end{figure}
+
+\subsubsection{$p_T$ - transverse momentum}
+
+The transverse momentum $p_T$ is defined as the component of a particle’s momentum that is perpendicular to the beam axis (commonly referred to as the z-axis in collider experiments).
+Mathematically, it is given by:
+
+\begin{equation}
+    p_T = \sqrt{p_x^2 + p_y^2}
+\end{equation}
+
+where $p_x$ and $p_y$ are the components of the momentum in the plane transverse to the beam (also called the transverse plane).
+
+This quantity is especially important in hadron colliders, where the incoming protons travel along the z-axis, but the exact longitudinal momentum of the interacting partons is unknown on an event-by-event basis.
+However, since the protons travel toward each other along the beam axis, the net transverse momentum of the system before the collision is essentially zero. As a result, conservation of momentum implies that the total transverse momentum of the final-state particles should also be zero, up to detector resolution and effects from invisible particles.
+
+For this reason, $p_T$ is a Lorentz-invariant quantity under boosts along the beam axis, and provides a frame-independent way to study the dynamics of the collision. It is also widely used in searches for new physics, where an imbalance in the total transverse momentum (often called missing transverse energy, or MET) can signal the presence of non-interacting or undetected particles.
+
+\subsubsection{$\phi$ - azimuthal angle}
+The azimuthal angle $\phi$ describes the direction of a particle in the transverse plane, i.e., the plane perpendicular to the beam axis (the $x\text{-}y$ plane if the beam is aligned along the z-axis).
+It is defined as the angle between the particle’s transverse momentum vector and a fixed reference axis (typically x-axis) measured counterclockwise:
+\begin{equation}
+    \phi = \tan^{-1}\left(\frac{p_y}{p_x}\right)
+\end{equation}
+The azimuthal angle takes values in the range $[-\pi, \pi]$ or $[0, 2\pi]$, depending on convention.
+This variable is invariant under longitudinal boosts.
+\subsubsection{$\eta$ - pseudorapidity}
+The pseudorapidity $\eta$ is a measure of the angle of a particle relative to the beam axis, defined as:
+\begin{equation}
+    \eta = -\ln\left(\tan\left(\frac{\theta}{2}\right)\right)
+\end{equation}
+where $\theta$ is the polar angle of the particle with respect to the beam axis.
+
+
+\section{Algorithms for jet reconstruction}
+Jet reconstruction algorithms are essential for identifying and grouping particles produced in high-energy collisions into jets, which represent the hadronic remnants of the original partons. These algorithms can be broadly categorized into two main types: \textbf{cone algorithms} and \textbf{sequential clustering algorithms}.
+
+\subsection{Cone Algorithms}
+Cone algorithms assume that particles in jets will show up in conical regions and thus they cluster based on $\eta - \phi $ space, resulting in jets with rigid circular boundaries.
+Most of the cone algorithms are iterative cones (IC). In such algorithms, a seed particle $i$ sets some initial direction, and one sums the momenta of all particles $j$ within a circle of radius $R$ around $i$ in azimuthal angle $\phi$ and pseudorapidity $\eta$, i.e. taking all $j$ such that 
+\begin{equation}
+    \Delta R_{ij}^2 = (y_i - y_j)^2 + (\phi_i - \phi_j)^2 < R^2
+\end{equation}
+where $y_i$ and $y_j$ are the pseudorapidities of particles $i$ and $j$, respectively, and $\phi_i$ and $\phi_j$ are their azimuthal angles. The total momentum of the jet is then calculated as the sum of the momenta of all particles within this cone.
+The direction of the jet is then recalculated as the weighted average of the momenta of all particles within the cone, and the process is repeated until no more particles can be added to the jet.
+
+\subsection{Sequential Clustering Algorithms}
+Gli algoritmi a ricombinazione sequenziale utilizzano informazioni geometriche ed energetiche per aggregare le particelle che potenzialmente arrivano dallo stesso partone, ricostruendo così la storia del getto.
+
+\subsubsection{$k_T$ Algorithm}
+The $k_T$ algorithm is a sequential clustering algorithm that uses the concept of distance between particles to group them into jets. The distance between two particles $i$ and $j$ is defined as:
+\begin{equation}
+    d_{ij} = \min(p_{T,i}^2, p_{T,j}^2) \dfrac{\Delta R_{ij}^2}{R^2}
+\end{equation}
+while the distance between a particle $i$ and the beam axis is defined as:
+\begin{equation}
+    d_{iB} = p_{T,i}^{2}
+\end{equation}
+For each particle, the algotithm calculated the minumum distance betwen $d_{ij}$ and $d_{iB}$. 
+\begin{equation}
+    d_{min} = \min(d_{ij}, d_{iB})
+\end{equation}
+If $d_{min}$ is smaller than a predefined threshold, the particle is added to a jet; otherwise, it is considered a standalone particle. The algorithm proceeds iteratively, recalculating the distances after each clustering step until all particles are grouped into jets or no more particles can be clustered.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/kt.png}
+    \caption{Schematic representation of the $k_T$ algorithm. The algorithm iteratively clusters particles based on their transverse momentum and distance in $\eta - \phi$ space, forming jets.}
+    \label{fig:kt_algorithm}
+\end{figure}
+
+\subsubsection{Anti-$k_T$ Algorithm}
+The anti-$k_T$ algorithm is a variant of the $k_T$ algorithm that uses a different distance measure to cluster particles. It is designed to produce jets with more uniform shapes and is particularly effective in high-energy collisions where jets can be closely spaced.
+The distance between two particles $i$ and $j$ is defined as:
+\begin{equation}
+    d_{ij} = \min(\dfrac{1}{p_{T,i}^2},\dfrac{1}{p_{T,j}^2}) \dfrac{\Delta R_{ij}^2}{R^2}
+\end{equation}
+while the distance between a particle $i$ and the beam axis is defined as:
+\begin{equation}
+    d_{iB} = \dfrac{1}{p_{T,i}^{2\beta}}
+\end{equation}
+The algorithm proceeds similarly to the $k_T$ algorithm, calculating the minimum distance between particles and the beam axis, and clustering them into jets based on this distance. The key difference is that the anti-$k_T$ algorithm tends to produce jets with more uniform shapes, making it more suitable for high-energy collisions where jets can be closely spaced.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/antikt.png}
+    \caption{Schematic representation of the anti-$k_T$ algorithm. The algorithm iteratively clusters particles based on their transverse momentum and distance in $\eta - \phi$ space, forming jets with more uniform shapes.}
+    \label{fig:antikt_algorithm}
+\end{figure}
+
+\subsubsection{Cambridge/Aachen Algorithm}
+The Cambridge/Aachen algorithm is another sequential anti$k_T$ clustering algorithm that uses a different distance measure to cluster particles. It is designed to produce jets with more uniform shapes and is particularly effective in high-energy collisions where jets can be closely spaced.
+The distance between two particles $i$ and $j$ is defined as:
+\begin{equation}
+    d_{ij} = \Delta R_{ij}^2
+\end{equation}
+while the distance between a particle $i$ and the beam axis is defined as:
+\begin{equation}
+    d_{iB} =  1
+\end{equation}
+
+Physically, the differences between the three algorithms are contained in the momentum weighting.  For the $k_T$ algorithm, the weighting is done to preferentially merge costituents with low transverse momentum with respect their nearest neighbours. 
+For the anti$k_T$, the weighting is done so as to preferentially merge constituents with high transverse momentum with respect to their nearest neighbours.
+The C-A algorithm relies only on distance weighting with no $k_T$ weighting at all.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\textwidth]{immagini/cap3/ca.png}
+    \caption{}
+    \label{fig:cambridge_aachen_algorithm}
+\end{figure}

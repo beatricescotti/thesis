@@ -1,0 +1,232 @@
+\chapter{Machine Learning in a nutshell} 
+
+Machine learning is a subfield of artificial intelligence that focuses on the development of algorithms and statistical models that enable computers to perform tasks without explicit instructions. Instead, these systems learn from data, identifying patterns and making decisions based on the information they have been trained on.
+Machine learning consists of designing efficient and accurate prediction algorithms. More generally, learning techniques are data-drivem methods combining fundamental concepts in computer science with ideas from statistics, probability and optimization.
+\subsubsection{Types of tasks}
+The following are some standard types of tasks in machine learning:
+\begin{itemize}
+    \item \textbf{Classification:} Assigning labels to data points based on learned patterns (e.g., e-mail spam detection).
+    \item \textbf{Regression:} Predicting continuous values based on input features (e.g., predicting house prices). In regression, the penalty for an incorrect prediction depends on the magnitude of the difference between the true and predicted values, in contrast with classification problem, where there is typically no notion of closeness between various categories. 
+    \item \textbf{Object detection:} Identifying and localizing objects within images or videos (e.g., detecting tumours in lung CT scans).
+    \item \textbf{Clustering:} Grouping similar data points together without predefined labels.
+    \item \textbf{Anomaly detection:} Identifying unusual patterns that do not conform to expected behavior.
+    \item \textbf{Ranking}: Ordering items based on their relevance or importance.
+\end{itemize}
+
+Algorithms that solve a learning task based on semantically annotated historical data are said to operate in a \textbf{supervised learning} mode. In contrast, algorithms that use data without any semantic annotation are said to operate in an \textbf{unsupervised learning} mode. In the latter case, the algorithm is expected to discover patterns in the data without any prior knowledge of the labels or categories.
+In this thesis I'll mainly focus on supervised learning. 
+
+\textbf{Label set: } We use \( Y \) to denote the set of all possible labels for a data point of a given learning problem. Note that the labels can be of two different types: \text{categorical} labels, which are discrete and finite and define classification problems, and \text{continuous} labels, which can take any value in a continuous range and define regression problems.
+
+\section{Neural networks and deep learning} 
+Neural networks are a class of machine learning algorithms inspired by the structure and function of the human brain. They consist of interconnected nodes (neurons) that process information in layers. Deep learning refers to the use of neural networks with many layers (deep neural networks) to model complex patterns in large datasets. This approach has led to significant advancements in areas such as image recognition, natural language processing, and game playing.
+
+\section{YOLO: You Only Look Once \cite{yolov8_ultralytics}}
+Object detection is a task that involves identifying and classifying objects present in images or videos. Initially, object detection was approached as a pipeline consisting of three main steps: proposal generation, feature extraction and region classification. However, this approach was computationally expensive and often led to suboptimal results.
+The emergence of deep learning brought a significant change in object detection, with deep convolutional neural networks (CNNs) playing a crucial role in this transformation. CNNs are designed to automatically learn hierarchical features from raw pixel data, eliminating the need for manual feature engineering. This shift allowed for more efficient and accurate object detection systems.
+
+Currently, deep learning-based object detection frameworks can be classified in two families: 
+\begin{itemize}
+    \item \textbf{Two-stage detectors:} These methods first generate region proposals and then classify them. Examples include R-CNNs (Region-based Convolutional Neural Networks), that first generate region proposals using a selective search algorithm and then extracts features from these regions using a CNN; the extracted features are then fed into an SVM for object classification. 
+    \item \textbf{One-stage detectors:} These methods perform detection in a single pass, directly predicting bounding boxes and class probabilities. Examples include YOLO (You Only Look Once), which exists in eleven versions.The YOLO models are popular for their accuracy and compact size. It is a state-of-the-art model that could be trained on any hardware. YOLOv8, in particular, was developed by Ultralytics and introduced on January 2023. It is used to detect objects in images, classify images and distinguish onjects from each other. 
+
+\end{itemize}
+
+\subsection{Architecture of YOLOv8}
+The YOLOv8 architecture is composed of two major parts, namely the \textbf{backbone} and the \textbf{head}, both of which use a fully convolutional neural network. 
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap2/yolo_architecture.png}
+    \caption{Architecture of YOLOv8. The backbone extracts features from the input image, while the head predicts bounding boxes and class probabilities.}
+    \label{fig:yolo_architecture}
+\end{figure}
+\begin{itemize}
+    \item The \textbf{backbone} is responsible for extracting features from the input image. It consists of a modified version of the CSPDarknet53 architecture, which has 53 convolutional layers and employs a technique called cross-stage partial connections to enhance the transmission of information across the various levels of the network. The convolutional layers are organized in a sequential manner to extract relevant features from the input image.
+    \item The \textbf{head} is responsible for predicting bounding boxes and class probabilities. It consists of a series of convolutional layers that take the features extracted by the backbone and apply additional operations to predict the bounding boxes and class probabilities for each object in the image. The head uses a technique called anchor boxes to handle objects of different sizes and aspect ratios.
+\end{itemize}
+
+
+The YOLOv8 framework can be used to perform computer vision tasks such as detection, segmentation, classification and pose estimation and comes with pre-trained models for each task. For detection, the models are pre trained on the COCO dataset, while for classification on ImageNet dataset. 
+There are different versions of YOLOv8, each designed for different tasks and with different architectures. The most common versions are YOLOv8n, YOLOv8s, YOLOv8m, YOLOv8l and YOLOv8x, where the letter indicates the size of the model (n for nano, s for small, m for medium, l for large and x for extra large). The larger the model, the more parameters it has and the more computational resources it requires to train and run.
+
+\section{Object Detection Metrics}
+A metric is a function that quantifies and evaluates the performance of a model. In the context of object detection, metrics are used to assess how well a model can detect and classify objects in images. 
+
+\subsection*{Intersection over Union (IoU)}
+When we talk about object detection, we often refer to the concept of \textbf{bounding boxes}. A bounding box is a rectangular box that is used to define the location of an object in an image, typically represented by its top-left corner coordinates (x, y), width, and height, or top-left and bottom-right coordinates. The bounding box is used to localize the object within the image and is often used in conjunction with a classification label to identify the object.
+Intersection over Union (IoU) is a metric used to evaluate the accuracy of the bounding box detection. It measures the overlap between the predicted and the ground truth box. The IoU is calculated as follows:
+\begin{equation}
+    IoU = \frac{Area_{Intersection}}{Area_{Union}} = \frac{A_{pred} \cap A_{gt}}{A_{pred} \cup A_{gt}}
+    \label{eq:IoU}
+\end{equation}
+
+The IoU value ranges from 0 to 1, where 0 indicates no overlap and 1 indicates perfect overlap. A common threshold for considering a detection as a true positive is an IoU of 0.5 or higher.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.45\textwidth]{immagini/cap2/iou.png}
+    \caption{}
+    \label{fig:iou}
+\end{figure}
+
+\begin{algorithm}
+    \caption{Intersection over Union (IoU) between two bounding boxes}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} Boxes $A = (x_A, y_A, w_A, h_A)$ and $B = (x_B, y_B, w_B, h_B)$
+        
+        \State \textbf{Compute bottom-right corners:}
+        \Statex \hspace{\algorithmicindent} $x2_A = x_A + w_A$, \quad $y2_A = y_A + h_A$
+        \Statex \hspace{\algorithmicindent} $x2_B = x_B + w_B$, \quad $y2_B = y_B + h_B$
+        
+        \State \textbf{Compute intersection rectangle:}
+        \Statex \hspace{\algorithmicindent} $x_{\text{int}}^{1} = \max(x_A, x_B)$, \quad $y_{\text{int}}^{1} = \max(y_A, y_B)$
+        \Statex \hspace{\algorithmicindent} $x_{\text{int}}^{2} = \min(x2_A, x2_B)$, \quad $y_{\text{int}}^{2} = \min(y2_A, y2_B)$
+
+        \State \textbf{Compute intersection area:}
+        \Statex \hspace{\algorithmicindent} $w_{\text{int}} = \max(0, x_{\text{int}}^{2} - x_{\text{int}}^{1})$
+        \Statex \hspace{\algorithmicindent} $h_{\text{int}} = \max(0, y_{\text{int}}^{2} - y_{\text{int}}^{1})$
+        \Statex \hspace{\algorithmicindent} $A_{\text{int}} = w_{\text{int}} \times h_{\text{int}}$
+        
+        \State \textbf{Compute areas of each box:}
+        \Statex \hspace{\algorithmicindent} $A_A = w_A \times h_A$, \quad $A_B = w_B \times h_B$
+        
+        \State \textbf{Compute union area:}
+        \Statex \hspace{\algorithmicindent} $A_{\text{union}} = A_A + A_B - A_{\text{int}}$
+        
+        \State \textbf{Return:} $\text{IoU} = \dfrac{A_{\text{int}}}{A_{\text{union}}}$
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection*{Precision and Recall}
+Precision and recall are fundamental metrics used to evaluate the performance of object detection models. These metrics provide valuable insights into the model's ability to identify objects of interest within images. 
+Let's define some fundamental concepts before diving into precision and recall:
+\begin{itemize}
+    \item \textbf{True Positive (TP):} These are istances where the model currently identifies and localize objectys, and the intersection over union (IoU) score between the predicted and the ground truth bounding box is equal or greater then a specified treshold.
+    \item \textbf{False Positive (FP):} These are cases where the model incorrectly identifies an object that does not exist in the ground truth or where the predicted box has an IoU score below tha define treshold.
+    \item \textbf{False Negative (FN):} These rapresent instances where the model fails to detect an object that is present in the ground truth. This means that the model has not detected an object that is present in the image, resulting in a missed detection.
+    \item \textbf{True Negative (TN):} Not applicable in object detection. It represents correcly rejecting the absence of objects, but in object detection, the goal is to detect objects rather than the absence of them.
+\end{itemize}
+
+\begin{figure}[!ht]
+\centering
+\begin{minipage}[t]{0.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap2/TP.png}
+    \caption{The object is there, and the model detects it, with an IoU above treshold.}
+    \label{fig:TP}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap2/FP.png}
+    \caption{The object is there, but the predicted box has an IoU below the treshold.}
+    \label{fig:FP}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap2/FN.png}
+    \caption{The object is there, and the model doesn't detect it. The ground truth object has no prediction.}
+    \label{fig:FN}
+\end{minipage}
+\caption{Ground truth box is the green rectangle, while the predicted box is the red rectangle.}
+\label{fig:TP_FP_FN}
+\end{figure}
+
+Let's not define the core metrics: 
+\begin{itemize}
+    \item \textbf{Precision}: Is a critical metric in model evaluation as it serves to quantify the accuracy of the positive predictions made by the model. It specifically assesses how well the model distinguishes true objects from false positives. In essence, precision provides insight into the model’s ability to make positive predictions that are indeed accurate. A high precision score indicates that the model is skilled at avoiding false positives and provides reliable positive predictions.
+    \begin{equation}
+        Precision = \frac{TP}{TP + FP}
+    \end{equation}
+
+    \item \textbf{Recall}: also known as sensitivity or true positive rate, is another essential metric used in evaluating model performance, especially in object detection tasks. Recall measures the model’s capability to capture all relevant objects in the image. In essence, recall assesses the model’s completeness in identifying objects of interest. A high recall score indicates that the model effectively identifies most of the relevant objects in the data.
+    \begin{equation}
+        Recall = \frac{TP}{TP + FN}
+    \end{equation}
+\end{itemize}
+We can define the \textbf{Average Precision (AP)} as the area under the precision-recall curve, which is obtained by plotting precision against recall for different confidence thresholds \footnote{The confidence threshold is a tunable parameter used to filter out low-confidence predictions in object detection tasks. Each predicted bounding box is assigned a confidence score, typically representing the estimated probability that the detection both contains an object and correctly identifies its class. Varying this threshold affects the trade-off between precision and recall: lower thresholds increase recall but may introduce more false positives, whereas higher thresholds improve precision at the cost of reduced recall.}. The AP is a single value that summarizes the model's performance across different levels of precision and recall. It is calculated as follows:
+\begin{equation}
+    AP = \int_{0}^{1} P_{\alpha}(box_{gt}, box_{pred}) dR_{\alpha}
+\end{equation}
+where \( P_{\alpha} \) is the precision at a given IoU threshold \( \alpha \) and \( R_{\alpha} \) is the recall at the same threshold.
+Precision signifies the accuracy of the model's positive predictions, while recall quantifies the model's ability to succesfully identify all relevant objects. AP achieves a harmonious balance between false positive and false negatives, providing a comprehensive evaluation of the model's performance. 
+
+\subsection*{Mean Average Precision (mAP)}
+Mean Average Precision (mAP) extends the concept of Average Precision (AP) by providing a global summary of a model’s performance across multiple object classes and, in some cases, multiple localization thresholds. While AP evaluates the precision-recall trade-off for a single class — by varying the confidence threshold and computing the area under the resulting precision-recall curve — mAP averages these AP values to reflect the model’s overall detection capabilities.
+\begin{equation}
+    mAP = \frac{1}{N} \sum_{i=1}^{N} AP_i
+\end{equation}
+where \( N \) is the number of classes and \( AP_i \) is the Average Precision for class \( i \).
+
+In practice, several versions of mAP are commonly reported. mAP@0.5 refers to the mean AP calculated at a fixed Intersection over Union (IoU) threshold of 0.5. mAP@[0.5:0.95], computes the average AP across ten IoU thresholds ranging from 0.5 to 0.95 (in increments of 0.05), providing a more rigorous and comprehensive evaluation that accounts for both classification and localization accuracy.
+\begin{equation}
+    mAP@50 = \frac{1}{N} \sum_{k=1}^{N} AP_K@50
+\end{equation}
+\begin{equation}
+    mAP@[50:95] = \frac{1}{N(95-50)}\sum_{\alpha = 50}^{\alpha = 95}\sum_{k=1}^{N} AP_K@\alpha
+\end{equation}
+where \( N \)  is the number of classes and \(\alpha\) is the IoU threshold.
+\section{Transfer learning}
+Transfer learning is a machine learning technique in which knowledge gained through one task or data set is used to improve the performance of models on another related task and/or on a different data set. 
+In other words, it uses what has been learned in one setting to improve generalization in another. The applications of transfer learning in deep learning are very interesting because models need a big amount of labeled data to learn and gain knoweledge, and a lot of times such big datasets are not avaiable.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap2/transfer_learning.png}
+    \caption{}
+    \label{fig:transfer_learning}
+\end{figure}
+Traditional learning processes create a new model for each new activity based on the labeled data available. This is because traditional machine learning algorithms assume that training and test data come from the same feature space, so if the data distribution changes or if the trained model is applied to a new dataset, users need to retrain a newer model from scratch, even if they want to carry out an activity similar to that of the first model. Transfer learning algorithms, on the other hand, take already trained models or networks as a starting point, then apply that model's knowledge, gained in a task or initial source data to a new, but related activity or target data.
+
+Depending on the amount of data available and the similarity between source domain and target domain, there are different transfer learning strategies:
+
+\begin{itemize}
+    \item{Feature extraction}: freezes most of the model, training only the head. It is useful with very little data and similar domains.
+    \item{Partial fine-tuning}: only the lowest layers freeze. Suitable for moderately different domains.
+    \item {Complete fine-tuning}: only the lowest layers freeze. Suitable for moderately different domains.
+\end{itemize}
+In the context of medical imaging, transfer learning has shown promising results. Models pre-trained on large natural image datasets (e.g. ImageNet, COCO) can learn general low-level features (such as edges, textures, and shapes) that are also present in medical images. Fine-tuning such models on smaller labeled medical datasets allows for improved performance even with limited annotated data, making transfer learning a valuable tool in the medical AI pipeline.
+
+The following chapters will explore specific cases of transfer learning applied to medical image datasets, comparing various pre-training strategies and model architectures.
+
+\section{Curriculum Learning}
+Curriculum Learning is a training strategy inspired by the way humans learn, initially tackling simple tasks and then moving on to more complex ones. Introduced by Bengio et al. in 2009 \cite{inproceedings}, this approach proposes to organize the training of a model according to an ordered sequence of examples, selected based on a difficulty criterion.
+
+Instead of presenting all data simultaneously and in random order, Curriculum Learning involves the progressive selection of subsets of data, which are introduced in a gradual manner during training. This controlled sequence allows the model to first acquire the simplest and most robust regularities, and then refine its predictive ability by tackling more complex cases.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap2/curr.png}
+    \caption{}
+    \label{fig:curriculum}
+\end{figure}
+
+An effective curriculum requires defining three basic components:
+\begin{itemize}
+    \item{Difficulty criterion}: is the mechanism through which a difficulty level is assigned to each example. It can be defined explicitly on the basis of known characteristics (eg geometric properties, data quality, object dimensions), or it can emerge automatically, for example by exploiting the loss obtained by the model during the early eras or the uncertainty of predictions.
+    \item{Pacing}:  is the function that regulates the pace at which the most difficult examples are introduced into training. Pacing can be defined a priori (e.g. by adding a certain number of examples to each epoch), or determined dynamically, for example by evaluating the performance of the model on a validation subset.
+    \item{Presentation order}: consists of the construction of a sequence of data (or subsets) to be presented to the model. This order can be fixed or updated during training, and strongly affects the effectiveness of the curriculum.
+\end{itemize}
+
+
+This type of approach has proven useful in scenarios where the data has significant variability, contains noisy or unbalanced examples, or when it is desired to accelerate the convergence of optimization. Furthermore, Curriculum Learning can help prevent the model from learning abnormal characteristics or statistical noise too early, thus improving generalization.
+
+\subsection*{Applications}
+In the visual field, a curriculum can be constructed in many ways: for example, a classification model can initially be trained on high-quality images and well-defined content, and then tackle more complex examples such as deformed, moving, partially occluded objects or present in unfavorable lighting conditions.
+In other contexts, such as the regression of physical quantities from images, the difficulty may depend on the structural variability of the visual content or the complexity of the information flow required for accurate prediction.
+
+\subsection*{Practical considerations}
+Despite the benefits observed in numerous works, the effectiveness of Curriculum Learning is highly dependent on
+\begin{itemize}
+    \item A correct definition of the difficulty;
+    \item An appropriate pacing;
+    \item the coherence of the curriculum with the final task.
+\end{itemize}
+
+In the absence of a clear criterion for distinguishing easy examples from difficult ones, or if pacing is poorly calibrated, the approach can even worsen performance compared to standard training.
+
+However, if well designed, Curriculum Learning can be a powerful tool for controlling training, especially in contexts where data distribution is uneven, the useful signal is weak or learning can benefit from gradual progression.
+
+
+

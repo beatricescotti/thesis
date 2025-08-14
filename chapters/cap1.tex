@@ -1,0 +1,170 @@
+\chapter{Computed Tomography}
+Computed Tomography (CT) is a medical imaging technique that uses X-rays to generate detailed cross-sectional images of the human body. Since its introduction in the 1970s, CT has revolutionized diagnostic radiology by enabling the visualization of internal structures with high spatial resolution and three-dimensional reconstruction capabilities. Unlike conventional radiography, which produces a single projection image, CT acquires multiple X-ray measurements from different angles around the patient and uses computer algorithms to reconstruct the corresponding anatomical slices.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{immagini/cap1/rad_ct1.png} 
+    \caption{On the left (figure a.) we can see a chest radioraphy, on the right (figure b.) we can see a CT scan of the same area. The CT scan provides a much more detailed view of the internal structures, allowing for better diagnosis and treatment planning.}
+    \label{fig:ct_scanner}
+\end{figure}
+
+CT plays a crucial role in clinical practice due to its ability to provide fast, accurate, and non-invasive diagnostic information for a wide range of applications. Modern CT scanners are equipped with advanced technologies that significantly improve image quality, reduce scan time, and minimize radiation dose.
+
+
+This chapter provides an overview of the main aspects of CT imaging that are relevant for medical physics applications. The first part briefly describes the experimental setup of a CT scanner, the second part focuses on the mathematical principles behind image reconstruction, highlighting the algorithms used to convert projection data into tomographic slices. Finally, the chapter introduces the concept of image post-processing, with particular attention to windowing and its impact on image interpretation.
+
+\section{Tomography setup}
+The basic idea behind tomography is to obtain a three-dimensional image of an object from a series of two-dimensional images acquired from different angles.
+For this purpose, a CT scanner consists, like any radiation measurement system, of a radiation source (an X-ray tube) and an array of particle detectors. To acquire projections from multiple angles, typically ranging from 0 to 180 degrees, the X-ray tube and the detectors are mounted on a rotating gantry, which allows the system to rotate around the patient or, more generally, around the object being examined. 
+
+As shown in Figure \ref{fig:CT_detector}, the detectors are not arranged on a plane perpendicular to the X-ray source, but rather along a circular arc. This configuration ensures that all pixels in the projection correspond to the same physical size, thus avoiding geometric distortions in the reconstructed image.
+Depending on the scanner design, the acquisition can be performed in a step-and-shoot mode or using continuous rotation, as in helical (spiral) CT. The X-ray beam is collimated into a fan or cone shape to cover the entire detector array. Each detector element typically consists of a scintillator coupled to a photodiode, which converts the X-ray photons into an electrical signal proportional to the received dose. Synchronizing the gantry rotation with data acquisition allows the collection of a sufficient number of projections to ensure accurate image reconstruction.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap1/setup.png} 
+    \caption{In the frontal view we can see, in order, the X-ray tube (radiation source), the rotating gantry (support for the X-ray tube and detectors), the field of measurement (where the patient or the object is allocated), the anti scatter collimators (to reduce the amount of scattered radiation reaching the detectors), and the detectors (which measure the intensity of the X-rays after they pass through the object). In the lateral view we can see the presence of collimators, used to adjust the narrowness of the beam depending on the type of scan and the area of interest.} 
+    \label{fig:CT_detector}
+\end{figure}
+\FloatBarrier 
+
+\section{Image Reconstruction}
+
+In computed tomography (CT), image reconstruction refers to the process of transforming raw projection data, acquired from different angles, into a cross-sectional image of the scanned object. The core idea is to recover a 2D function \( f(x, y) \) — representing the internal structure — from its projections. Each projection contains information about how much an X-ray beam is attenuated as it travels through the object along a certain direction.
+
+\subsection*{1. The Radon Transform}
+
+Mathematically, each X-ray beam travels along a straight line. For a beam oriented at angle \( \theta \), the line is defined by:
+\[
+x \cos\theta + y \sin\theta = s
+\]
+where \( s \) is the perpendicular distance from the origin to the line.
+
+The projection \( p(s, \theta) \) is obtained by integrating the object's density \( f(x, y) \) along that line:
+\[
+p(s, \theta) = \int_{-\infty}^{+\infty} f(x, y)\, \delta(x \cos\theta + y \sin\theta - s)\, dx\, dy
+\]
+This is called the \textbf{Radon transform} of the function \( f(x, y) \).
+
+\subsection*{2. The Fourier Slice Theorem}
+
+To reconstruct the image, a key result is the \textbf{Fourier Slice Theorem}. It says that the 1D Fourier transform of a projection at angle \( \theta \) gives a slice of the 2D Fourier transform of \( f(x, y) \) taken in the same direction.
+
+We compute the 1D Fourier transform of the projection:
+\[
+P(\theta, u) = \int_{-\infty}^{+\infty} p(s, \theta)\, e^{-2\pi i u s}\, ds
+\]
+
+Plugging in the expression for \( p(s, \theta) \), we get:
+\[
+P(\theta, u) = \iint f(x, y)\, e^{-2\pi i u (x \cos\theta + y \sin\theta)}\, dx\, dy
+\]
+
+This expression matches the 2D Fourier transform of \( f(x, y) \), evaluated at:
+\[
+u_x = u \cos\theta,\quad u_y = u \sin\theta
+\]
+so we can write:
+\[
+P(\theta, u) = F(u \cos\theta, u \sin\theta)
+\]
+
+In other words, each projection gives us a radial slice of the 2D Fourier transform of the image.
+
+\subsection*{3. Inverse Transform and Filtering}
+
+If we collect projections over many angles, we can build the 2D Fourier space of the image. Then, to reconstruct \( f(x, y) \), we apply the inverse 2D Fourier transform:
+\[
+f(x, y) = \iint F(u_x, u_y)\, e^{2\pi i (u_x x + u_y y)}\, du_x\, du_y
+\]
+
+Switching to polar coordinates:
+\[
+u_x = u \cos\theta,\quad u_y = u \sin\theta
+\]
+the Jacobian of the transformation gives:
+\[
+du_x\, du_y = |u|\, du\, d\theta
+\]
+
+Substituting into the inverse Fourier formula:
+\[
+f(x, y) = \int_{0}^{\pi} \int_{-\infty}^{+\infty} |u|\, P(\theta, u)\, e^{2\pi i u (x \cos\theta + y \sin\theta)}\, du\, d\theta
+\]
+
+Here, the factor \( |u| \) acts as a high-pass filter, enhancing high-frequency components and correcting for the blurring introduced during projection.
+The equation above gives the foundation for the \textbf{Filtered Back Projection} algorithm, one of the most common reconstruction methods in CT. It works as follows:
+\begin{enumerate}
+    \item Acquire projections \( p(s, \theta) \) at many angles \( \theta \in [0, \pi] \).
+    \item Compute their 1D Fourier transforms \( P(\theta, u) \).
+    \item Multiply by \( |u| \) (or an equivalent ramp-like filter) to enhance sharpness.
+    \item Invert the Fourier transform to get filtered projections.
+    \item Back-project the filtered projections over the image domain and sum them.
+\end{enumerate}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{immagini/cap1/radon.png}
+    \caption{Radon transform and reconstruction via filtered back projection. Each projection contributes a slice in frequency space; the image is recovered by inverse Fourier transform.}
+    \label{fig:radon_transform}
+\end{figure}
+
+The filtered back projection is fast and effective, which is why it is still widely used in clinical CT. However, modern scanners often integrate more advanced techniques such as iterative reconstruction or machine learning, which can offer better noise suppression and lower radiation dose. Nevertheless, understanding the Radon transform and the Fourier Slice Theorem provides deep insight into how tomographic images are formed.
+
+
+\section{Windowing}
+
+The pixel values are quantified in \textbf{Hounsfield units (HU)}, a standardized scale that reflects the radiodensity of the tissue. This scale is defined relative to the attenuation coefficients of water and air:
+\begin{equation}
+    HU_{tissue} = 1000 \times \dfrac{\mu_{tissue} - \mu_{water}}{\mu_{water}-\mu_{air}}
+\end{equation}
+where $\mu$ represents the linear attenuation coefficient. Key reference points: water = 0 HU for definition, air = -1000 HU. \\
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.75\textwidth]{immagini/other_windowing.png}
+    \caption{CT Hounsfield Unit (HU) ranges for key tissues. Highlighted regions show typical HU values for diagnostic reference, from dense compact bone ($\sim 3000$ HU ) to air ($1000$ HU), with soft tissues ($20-80$ HU) and fluids (blood $\sim 45$ HU, water $0$ HU) in intermediate ranges.}
+    \label{fig:general_windowing}
+\end{figure}
+
+\textbf{Windowing} is a technique used in computed tomography (CT) to \textbf{enhance the visibility of specific tissues or structures within the body.} It involves adjusting the range of Hounsfield units (HU) displayed in the CT image, allowing radiologists to focus on particular types of tissues, such as bones, soft tissues, or air-filled spaces. The window width and center determine the contrast and brightness of the image, respectively.
+\begin{itemize}
+    \item \textbf{Window width} (WW): This parameter controls the range of Hounsfield units displayed in the image. A narrow window width enhances the contrast between tissues with similar densities, while a wider window width allows a broader range of densities to be visualized.
+    \item \textbf{Window center} (WC): This parameter sets the midpoint of the Hounsfield unit range displayed in the image. Adjusting the window level changes the brightness of the image, allowing radiologists to focus on specific tissue types.
+\end{itemize}
+The choice of window width and level depends on the specific clinical question and the type of tissue being examined. 
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.75\textwidth]{immagini/windowing.png}
+    \caption{Standard CT windowing settings for different anatomical structures. Full CT value range ([-1000, 3000] HU). Clinical presets with window center (WC) and width (WW) values for bone (WC=1000, WW=2500), mediastinum (WC=-50, WW=400), and lung (WC=-600, WW=1700) visualization.}
+    \label{fig:windowing_lung}
+\end{figure}
+
+
+\section{CT Planes}
+
+Images can be visualized in three standard orthogonal planes: axial, coronal, and sagittal. Each plane offers a unique perspective on anatomical structures, aiding in comprehensive clinical assessment.
+
+\begin{itemize}
+    \item \textbf{Axial plane} (transverse): A horizontal plane that divides the body into superior (upper) and inferior (lower) parts. It is the primary acquisition plane in most CT scans.
+    
+    \item \textbf{Coronal plane}: A vertical plane that divides the body into anterior (front) and posterior (back) parts. Often used for viewing the frontal anatomy.
+    
+    \item \textbf{Sagittal plane}: A vertical plane that divides the body into left and right portions. It is particularly useful for evaluating asymmetries between the two sides.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.4\textwidth]{immagini/cap1/planes.jpg}
+    \caption{CT planes: axial, coronal, and sagittal. The axial plane is horizontal, the coronal plane is vertical and divides the body into front and back, and the sagittal plane is vertical and divides the body into left and right.}
+    \label{fig:ct_planes}
+\end{figure}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap5/planess.png}
+    \caption{CT planes: axial, coronal, and sagittal. The axial plane is horizontal, the coronal plane is vertical and divides the body into front and back, and the sagittal plane is vertical and divides the body into left and right.}
+    \label{fig:planes}
+\end{figure}
