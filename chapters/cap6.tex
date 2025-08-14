@@ -1,0 +1,105 @@
+\chapter{Dataset creation and Training Strategies}
+
+\section{YOLO dataset}
+Before discussing the results, it is necessary to provide some background on Ultralytics, the company that developed the YOLO model.
+
+In this thesis, we focus on supervised training, in which the model is provided with images and corresponding annotations during the training phase. These annotations include the bounding box coordinates (top-left coordinate, height, and width) as well as the object class, since our task is object detection.
+
+In particular, Ultralytics requires the data to be organized in a specific structure, as illustrated in Figure~\ref{fig:yolo_organization}. The dataset must be split into training, validation, and test sets, as in any standard workflow. Images are stored in their respective subfolders under \texttt{images}, while annotations are placed in corresponding subfolders under \texttt{labels}. Each annotation must be stored in a \texttt{.txt} file with the same name as its corresponding image.
+
+\begin{figure}[!ht]
+    \centering 
+    \includegraphics{immagini/cap6/dataset_organization.png}
+    \caption{}
+    \label{fig:yolo_organization}
+\end{figure}
+
+Inside the folder containing all images and annotations, a configuration file named \texttt{dataset.yaml} must be included. This file is provided to the model during training.
+It specifies the relative paths to the training, validation, and test image directories (the paths to the labels are not required, as they follow the same folder structure as the images, and the annotation files share the same names as their corresponding images).
+The file must also define the number of classes and their names.
+
+\begin{lstlisting}[language=Python]
+train: ../dataset/images/train
+val: ../dataset/images/validation
+test: ../dataset/images/test
+nc: 2
+names: ['cat', 'dog']
+\end{lstlisting}
+The \texttt{train}, \texttt{val}, and \texttt{test} keys specify the relative paths to the training, validation, and test image directories, respectively. The \texttt{nc} key indicates the number of classes, while the \texttt{names} key provides a list of class names.
+
+\subsection*{Annotations}
+YOLO also requires annotations to be provided in a specific format:
+
+\begin{equation*}
+    \text{class} \qquad \dfrac{x_{\text{center}}}{\text{image width}} \qquad \dfrac{y_{\text{center}}}{\text{image height}} \qquad \dfrac{\text{width}}{\text{image width}} \qquad \dfrac{\text{height}}{\text{image height}}
+\end{equation*}
+
+Each annotation file contains one line for each object present in the corresponding image. The first value is the class index, followed by the normalized coordinates of the bounding box: the x- and y-coordinates of the center of the bounding box, and its width and height, all normalized by the dimensions of the image.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=0.55\textwidth]{immagini/cap6/annotations.png}
+\label{fig:annotations_cat}
+\end{figure}
+
+\section{Training Settings}
+Training a deep learning model involves feeding it data and adjusting its parameters so that it can make accurate predictions. 
+\subsection{Hyperparameters}
+The training process is controlled by a set of hyperparameters, which are parameters that are not learned during training but are set before the training begins. These hyperparameters include:
+\begin{itemize}
+    \item \textbf{Learning Rate}: This is a crucial hyperparameter that determines how much the model's weights are updated during training. A higher learning rate can lead to faster convergence but may also cause the model to overshoot the optimal solution.
+    \item \textbf{Batch Size}: This refers to the number of training examples used in one iteration of training. A larger batch size can lead to more stable gradients but requires more memory.
+    \item \textbf{Number of Epochs}: An epoch is one complete pass through the entire training dataset. The number of epochs determines how many times the model will see the entire dataset during training.
+    \item \textbf{Optimizer}: The optimizer is an algorithm used to update the model's weights based on the computed gradients. Common optimizers include Adam, SGD.
+    \item \textbf{Data Augmentation}: This technique involves applying random transformations to the training data to increase its diversity and improve the model's generalization ability. Common augmentations include rotation, scaling, flipping, and color adjustments.
+    \item \textbf{Early Stopping Criteria}: This is a condition that stops training when the model's performance on the validation set does not improve for a specified number of epochs. It helps prevent overfitting and saves computational resources.
+    \item \textbf{Weight Decay}: technique used to prevent overfitting by adding a penalty term to the loss function based on the magnitude of the model's weights. It encourages the model to learn simpler patterns.
+    \item \textbf{Dropout}: A regularization technique that randomly sets a fraction of the model's neurons to zero during training. This helps prevent overfitting by reducing the model's reliance on specific neurons.
+\end{itemize}
+
+\subsection{Loss Function}
+The loss function is a critical component of the training process, as it quantifies how well the model's learning and the predictions match the ground truth. In the case of object detection using YOLOv8, the loss function typically consists of three components:
+
+\subsubsection{1. Box Loss}
+The box loss measures the difference between the predicted bounding box coordinates and the ground truth coordinates. It is calculated as the Complete Intersection over Union (\textbf{CIoU}) loss, which is an extension of the Intersection over Union metric discussed in Chapter 2, and takes into account not only the overlap between the predicted and ground truth boxes but also their aspect ratio and distance between their centers. The CIoU loss is defined as:
+\begin{equation}
+    L_{CIoU} = 1 - IoU - \dfrac{d^2}{c^2} - \alpha v
+\end{equation}
+where IoU is defined in Eq.\ref{eq:IoU}, where $v$ is a function of the boxes widths and heights and $\alpha$ is a trade-off parameter function of IoU. 
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{immagini/cap6/CIoU.png}
+    \caption{Representation of a ground truth box in green and its prediction in red. "d" is the euclidean distance between the centers, while "c" is the diagonal of the smallest box including the green and the red one.}
+    \label{fig:CIoU}
+\end{figure}
+
+\subsubsection{2. Classification Loss}
+
+\subsubsection{3. Dual Focal Loss}
+The classification loss measures the difference between the predicted class probabilities and the ground truth class labels. YOLOv8 uses a dual focal loss, which is a combination of binary cross-entropy loss and focal loss. The binary cross-entropy loss is used for multi-label classification tasks, while the focal loss helps to address class imbalance by down-weighting easy-to-classify examples and focusing more on hard-to-classify examples.
+The dual focal loss is defined as:
+\begin{equation}
+    L_{dual} = \dfrac{1}{N} \sum_{i=1}^{N} \left( -\alpha (1 - p_i)^{\gamma} \log(p_i) - (1 - \alpha) p_i^{\gamma} \log(1 - p_i) \right)
+\end{equation}
+where $N$ is the number of classes, $p_i$ is the predicted probability for class $i$, $\alpha$ is a balancing factor, and $\gamma$ is a focusing parameter that controls the down-weighting of easy examples.
+\subsubsection{Total Loss}
+The total loss for YOLOv8 is a weighted sum of the box loss, classification loss, and dual focal loss:
+\begin{equation}
+    L_{total} = \lambda_{box} L_{CIoU} + \lambda_{cls} L_{cls} + \lambda_{dual} L_{dual}
+\end{equation}
+where $\lambda_{box}$, $\lambda_{cls}$, and $\lambda_{dual}$ are hyperparameters that control the relative importance of each loss component and can be set in the configuration scrpit. Default values are: $\lambda_{box} = 7.5$, $\lambda_{cls} = 0.5$, and $\lambda_{dual} = 1.5$.
+
+\subsection{Augmentation}
+Augmentation techniques are essential for improving the robustness and performance of YOLO models by introducing variability into the training data, helping the model generalize better to unseen data. Here's a list of the augmentations that have been used in this work and can be set in the configuration file with the others hyperparameters:
+\begin{itemize}
+    \item \texttt{hsv}: modifies the hue, saturation, and value of the image, allowing the model to learn to recognize objects under different lighting conditions and color variations.
+    \item \texttt{degrees}: applies random rotations to the image, helping the model become invariant to object orientation. 
+    \item \texttt{translate}: shifts the image horizontally and/or vertically, allowing the model to learn to recognize objects that may not be centered in the frame.
+    \item \texttt{scale}: resizes the image, helping the model learn to recognize objects at different scales.
+    \item \texttt{shear}: applies a shear transformation to the image, which can help the model learn to recognize objects that may be distorted or skewed.
+    \item \texttt{flipud}: flips the image vertically, allowing the model to learn to recognize objects that may appear upside down.
+    \item \texttt{fliplr}: flips the image horizontally, allowing the model to learn to recognize objects that may appear mirrored.
+    \item \texttt{mosaic}: combines multiple images into a single image, creating a more diverse training set and helping the model learn to recognize objects in different contexts.
+    \item \texttt{mixup}: combines two images and their corresponding annotations, creating a new image that contains features from both. This technique helps the model learn to recognize objects that may be partially occluded or overlapping.
+\end{itemize}
