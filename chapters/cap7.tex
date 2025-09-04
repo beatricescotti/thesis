@@ -1,11 +1,81 @@
 \chapter{Training Results}
 
+In this chapter, the results obtained from the various training strategies and models are presented. The discussion will start with the results from the medical images, confronting the model's performances with different types of preprocessing described in Chapter 4. Then, the results from the jet images training will be presented, confronting the curriculum learning strategy with traditional training, going on with analyzing the impact of freezing different layers of the model during training and finishing with the transfer learning results on medical images.
+The model used for all training is the eight's version of YOLO, explained in Chapter 2. 
+
 \section{Medical Images}
-Inserire i risultati del preprocessing
+The medical images used in this thesis are CT scans from the NLST dataset, which contains annotated lung nodules. The annotations were made by expert radiologists and include bounding boxes around the nodules, as well as additional information such as nodule size and location. We have approximately 9000 annotated images, which are sufficient to train a model.
+As explained in Chapter 4, different types  of preprocessing were applied to the image to enhance the features of interest, and a model was trained on the full dataset to establish a performance baseline and to compare the different types of preprocessing. 
+The model weights were initialized with the COCO pre-trained weights, and the hyperparameters used for training were as follows:
 \begin{itemize}
-    \item padding vs non padding 
-    \item windowing vs windowing masking vs windowing rgb (solo per NLST)
+    \item Learning Rate: $1 \cdot 10^{-4}$ with a cosine decay scheduler, which gradually decreases the learning rate over time following a cosine function. This helps the model converge more smoothly and can lead to better performance.
+    \item Batch Size: 8
+    \item Box, Classificatio and Dual Focal Loss Weight: 7.5, 1.0, 1.5
+    \item Dropout: 0.3
+    \item Weight Decay: $1 \cdot 10^{-3}$
+    \item Optimizer: Stochastic Gradient Descent (SGD) with momentum of 0.937
+    \item Epochs number: 100, with early stopping if the validation loss does not improve for 10 consecutive epochs.
 \end{itemize}
+
+Data augmentation was applied in each training to enhance the model's ability to generalize. The augmentatins parameters used are:
+\begin{itemize}
+    \item Random horizontal and vertical flips with a probability of 0.5 (\texttt{fliplr, flipud})
+    \item Random rotation between -10 and 10 degrees (\texttt{degrees})
+    \item Random scaling between 0.8 and 1.2 according to the image size (\texttt{scale})
+    \item Random translation of 0.05 according to the image size (\texttt{translate})
+    \item Color jittering with hue, saturation, and brightness adjustments of respectively 0.015, 0.7 and 0.4 (\texttt{$hsv_h$}, \texttt{$hsv_s$}, \texttt{$hsv_v$}) 
+\end{itemize}
+
+The original files are in DICOM format, which is not accepted as input by YOLO, so they were converted to PNG. The conversion can be done in differenty ways, convertirng linearly the pixel values to grayscale images (0-255), or applying a windowing techniques to enhance certain details. 
+The preprocessing confronted were: 
+\begin{enumerate}
+    \item \textbf{Linear conversion} to 0-255 mantaining the original pixel size, 512x512.
+    \item \textbf{Linear conversion + masking} the lung region, mantaining the original pixel size, 512x512.
+    \item \textbf{Windowing} with width 1700 and level -600, mantaining the original pixel size, 512x512.
+    \item \textbf{Windowing RGB} with three different window settings for each channel.
+    \item \textbf{Linear conversion + resampling + padding} to 704x704 pixels.
+    \item \textbf{Windowing + resampling + padding} to 704x704 pixels.
+\end{enumerate}
+The results of the different types of preprocessing are shown in Figure~\ref{fig:preprocessing_results}, which shows the mAP@50 evaluated on the validation set after each epoch during training.
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{immagini/cap7/mAP50B_preprocessing_padding.png}
+    \caption{mAP@50 evaluated on the validation set after each training epoch for the different types of preprocessing.}
+    \label{fig:preprocessing_results}
+\end{figure}
+
+Every dataset has their own test set, composed of approximately 900 images, and the model with the best mAP@50 on the validation set during training was saved and used for evaluation on the test set. The results are summarized in the following table \ref{tab:medical_results}:
+
+\begin{table}[!ht]
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|c|c|c|}
+    \hline
+    \textbf{Model}                                                                 & \textbf{Test mAP@50}         & \textbf{Validation mAP@50}   \\ \hline
+    {\color[HTML]{3531FF} Linear conversion (0-255) {[}512, 512{]}}                & {\color[HTML]{3531FF} 0.631} & {\color[HTML]{3531FF} 0.771} \\
+    {\color[HTML]{F8A102} Linear conversion + masking {[}512, 512{]}}              & {\color[HTML]{F8A102} 0.752} & {\color[HTML]{F8A102} 0.637} \\
+    {\color[HTML]{009901} RGB windowing {[}512, 512{]}}                            & {\color[HTML]{009901} 0.770} & {\color[HTML]{009901} 0.729} \\
+    {\color[HTML]{FE0000} Standard Windowing {[}512, 512{]}}                       & {\color[HTML]{FE0000} 0.690} & {\color[HTML]{FE0000} 0.698} \\
+    {\color[HTML]{6200C9} Linear conversion + resampling + padding {[}704, 704{]}} & {\color[HTML]{6200C9} 0.718} & {\color[HTML]{6200C9} 0.721} \\
+    {\color[HTML]{643403} Windowing + resampling + padding {[}704, 704{]}}         & {\color[HTML]{643403} 0.952} & {\color[HTML]{643403} 0.944} \\ \hline
+    \end{tabular}
+    }
+    \caption{}
+    \label{tab:medical_results}
+\end{table}
+
+We can clearly see that the best preprocessing is the \textbf{linear conversion with resampling and padding}, which achieves a mAP@50 of 0.952 on the test set, significantly outperforming all other methods. This indicates that resampling to a larger size and padding the images helps the model learn more effectively, likely because it provides more context and detail for the nodules. 
+The resampling strategy works best because it standardizes the input size, if we take a look at the values, we can make these two comparisons: 
+\begin{itemize}
+    \item Linear conversion 512x512 has a mAP of 0.631, while the resampled set arrives to 0.952.
+    \item Windowing 512x512 achies a mAP of 0.690 on the test set, while the same set resampled arrives to 0.718.
+\end{itemize}
+This shows that resampling has a significant positive impact on the model's performance, regardless of whether windowing or linear conversion is used.
+If we take a look at the other models, we can see that the RGB windowing also performs well, achieving a mAP@50 of 0.770 on the test set. This suggests that using multiple window settings to capture different aspects of the image can be beneficial for the model's learning process. 
+The linear conversion with masking also performs well, achieving a mAP@50 of 0.752 on the test set. This indicates that focusing the model's attention on the lung region can help improve its ability to detect nodules.
+The standard windowing method achieves a mAP@50 of 0.690 on the test set, which is lower than the other methods. This suggests that while windowing can enhance the lung itself but not the nodules, being less effective than the other preprocessing techniques.
+Overall, these results highlight the importance of preprocessing techniques in medical image analysis and demonstrate that resampling and padding can significantly enhance model performance.
+
+\newpage
 \section{Jets Model}
 As anticipated in Chapter 4, we created 10 datasets of particle jet images with varying difficulty levels by adjusting the number of jets per blob, the number of blobs per image (following a Poisson distribution), and the noisy background.
 Applying a curriculum learning strategy to train the model on the jets felt quite natural, since the difficulty criterion was defined a priori through the intentional design of the datasets. As explained in Chapter 2, curriculum learning is a training strategy where the network is first presented with simpler images, and the difficulty is gradually increased. This allows the network to learn salient image features more effectively without being overwhelmed by excessive complexity from the outset.
@@ -26,6 +96,7 @@ First, we define the order in which the datasets are presented to the network. I
 \item Difficulty Level 10: 1-jet images with background noise
 \end{itemize}
 
+\newpage
 \begin{figure}[h!]
     \centering
     \begin{minipage}{0.19\textwidth}
