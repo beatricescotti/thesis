@@ -1,7 +1,266 @@
 \chapter{Synthetic Particle Dataset}
+\label{cap:jets}
+
+In the previous chapter was introduced the concept of jets in high energy physics, describing their formation following hard scattering, parton shower and hadronization processes, and the algorithms developed for their reconstruction. These physical objects represent the experimental signature of fundamental interactions and, as seen, their properties are deeply linked to the identity of the original parton.
+An approach explored in this thesis consists in representing jets as two-dimensional images. In this representation, the transverse plane $\eta$-$\phi$ of the detector acts as the image plane, while the transverse energy or momentum deposited in the calorimetric cells defines the corresponding pixel intensity.
+These jet images possess highly informative morphological characteristics: they are intrinsically noisy, have granular cluster structures and show spatial patterns whose degree of complexity is related to the flavor of the original jet. Precisely, these characteristics (noise, granularity and cluster structure) make them an exceptional test bed for the development and pre-training of models based on neural networks, whose ultimate goal goes far beyond particle physics.
+The objective of this chapter is therefore to describe in detail the methodology followed to generate image datasets starting from the simulation samples of the $H \to b\bar{b}$, $t\bar{t}$ and QCD jets.  
+The ultimate aim of this thesis is to exploit the features learned from our model on this physical domain, rich in noisy signals and complex patterns, to initialize (or pre-train) a model to be applied to a completely different target domain: medical images, particularly lung tomographies.
+We hypothesize that the features a model learns to isolate a specific jet flavor (filtering signal from noise, identifying key clusters, and analyzing energy patterns) are fundamentally the same type of features needed to detect a nodule in a medical image. A jet image, therefore, is not just physics data; it is a rich training ground for medical AI.
+To maximize the effectiveness of this knowledge transfer, the jet image dataset will be generated with a curriculum learning approach. Different types of images will be produced, which differ in their level of difficulty and complexity (for example, varying the background noise, or the number of jets per image).
+This will allow the model to learn incrementally, starting from simple concepts to progressively tackle more complex tasks, thus building robust and generalizable feature representations that will be valuable for subsequent fine-tuning on the medical domain.
+
+
+\section{JetClass Dataset}
+
+JETCLASS \cite{qu2024particletransformerjettagging} is a dataset that comprises about 100 million jets belonging to 10 different classes, designed for the purpose of studying and improving \textit{jet tagging}.  
+Jet tagging refers to the task of identifying the mother particle from which the jet originated.  
+The dataset includes 10 classes, which are typically divided into two main categories:
+\begin{itemize}
+    \item \textit{background jets}, initiated by light quarks or gluons.
+    \item \textit{signal jets}, originating from top quarks or from the $W$, $Z$, or Higgs bosons.
+\end{itemize}
+
+Jets were generated using standard Monte Carlo simulations, with event generators commonly adopted at the LHC. In particular, \texttt{Pythia}  was used to simulate showering, hadronization, and the production of the final state.  
+
+To provide a more realistic setup, closer to the jet reconstructions performed in the ATLAS\cite{Aad:2008zzm} and CMS \cite{:2008zzk} experiments, the detector response was simulated using \texttt{DELPHES} \cite{ovyn2010delphesframeworkfastsimulation}, with the standard CMS configuration available in the framework.  
+Jet reconstruction was performed with the anti-$k_{T}$ clustering algorithm with a radius parameter $R=0.8$. Only jets with transverse momentum in the range $500 < p_T < 1000$ GeV and pseudorapidity $|\eta| < 2$ are included. 
+
+Finally, \textbf{JETCLASS} provides the full list of constituent particles for each jet. For every particle, the kinematic variables are available, including the energy and momentum, described by the 4-vector $(E, p_x, p_y, p_z)$ in units of GeV.
 
 \section{Jet Generation}
+A way to represent particle jets is with 2D images. Using the four-momenta $(E, p_x, p_y, p_z)$ of the jet costituents provided by the JETCLASS dataset, we can create images that capture the energy flow of the jet in a two-dimensional angular plane. 
+ 
+This process involves several steps, which are implemented in the \texttt{FastJet} framework \cite{Cacciari_2012}.
+\begin{itemize}
+    \item The first step converts these Cartesian coordinates into the hadronic variables $(p_T, y, \phi, m)$ using the function \texttt{ptyphims\_from\_p4s()} provived in the \texttt{FastJet} framework. We recall that 
+             \begin{equation}
+                    p_T = \sqrt{p_x^2 + p_y^2}, \quad y = \frac{1}{2} \ln\left(\frac{E + p_z}{E - p_z}\right), \quad \phi = \tan^{-1}\left(\frac{p_y}{p_x}\right), \quad m = \sqrt{E^2 - p_T^2 - p_z^2}.
+             \end{equation}
+ \end{itemize}
 
-\section{Image Assembling}
+Then, each jet is centered by shifting its constituents so that the hardest particle defines the reference axis and order to remove residual symmetries and make jets comparable, reflections and rotations are applied.
 
-\section{Background Generation}
+Once the jets are aligned in this common frame, the angular plane $(\eta, \phi)$ is discretized into a grid of pixels. 
+Each particle is assigned to a pixel according to its $(\eta, \phi)$ coordinates, 
+and the pixel intensity is set by the particle’s transverse momentum $p_T$.  
+
+The result is a two-dimensional array, where the brightness encodes the energy flow of the jet. 
+Background QCD jets tend to appear more concentrated around the center, whereas signal jets from heavy particles (top, $H$) 
+exhibit multi-prong structures, due to the boost of the mother particle.
+
+It is possible to create images that represent multiple jets by simply taking and summing multiple rows from the dataframe. In this thesis work, we decided to generate images of varying difficulty by creating blobs composed of a number of jets ranging from 25 down to 1, specifically using 25, 12, 6, 3, and 1 jet(s). These blobs were created from three different classes: \texttt{HToBB}, \texttt{QCD}, and \texttt{TTBar}, which, as explained in Section \ref{sec:jets}.
+
+Naturally, the blobs formed by a larger number of jets are more easily identifiable by the network, as shown in Figures \ref{fig:HtoBB},\ref{fig:QCD} and \ref{fig:TTBar}. This is because they more clearly display their characteristic energy distribution, which is the key feature that distinguishes them from other classes. 
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.19\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/HToBB_001_fileroot_014_id_00000.png}
+        \caption*{1 jet}
+        \label{fig:hbb_1jet}
+    \end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/HToBB_003_fileroot_012_id_00000.png}
+    \caption*{3 jets}
+    \label{fig:hbb_3jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/HToBB_006_fileroot_010_id_00000.png}
+    \caption*{6 jets}
+    \label{fig:hbb_6jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/HToBB_012_fileroot_006_id_00000.png}
+    \caption*{12 jets}
+    \label{fig:hbb_12jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/HToBB_025_fileroot_000_id_00000.png}
+    \caption*{25 jets}
+    \label{fig:hbb_25jet}
+\end{minipage} \hfill 
+\caption{Examples of $h \to b \bar{b}$ events with different combinations of jets.}
+\label{fig:HtoBB}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.19\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/QCD_001_fileroot_014_id_00000.png}
+        \caption*{1 jet}
+        \label{fig:qcd_1jet}
+    \end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/QCD_003_fileroot_012_id_00000.png}
+    \caption*{3 jets}
+    \label{fig:qcd_3jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/QCD_006_fileroot_010_id_00000.png}
+    \caption*{6 jets}
+    \label{fig:qcd_6jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/QCD_012_fileroot_006_id_00000.png}
+    \caption*{12 jets}
+    \label{fig:1cd_12jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/QCD_025_fileroot_000_id_00000.png}
+    \caption*{25 jets}
+    \label{fig:qcd_25jet}
+\end{minipage} \hfill 
+\caption{Examples of QCD events with different combinations of jets.}
+\label{fig:QCD}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.19\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/TTBar_001_fileroot_014_id_00000.png}
+        \caption*{1 jet}
+        \label{fig:ttbar_1jet}
+    \end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/TTBar_003_fileroot_012_id_00000.png}
+    \caption*{3 jets}
+    \label{fig:ttbar_3jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/TTBar_006_fileroot_010_id_00000.png}
+    \caption*{6 jets}
+    \label{fig:ttbar_6jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/TTBar_012_fileroot_006_id_00000.png}
+    \caption*{12 jets}
+    \label{fig:ttbar_12jet}
+\end{minipage} \hfill
+\begin{minipage}{0.19\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{immagini/cap4/TTBar_025_fileroot_000_id_00000.png}
+    \caption*{25 jets}
+    \label{fig:ttbar_25jet}
+\end{minipage} \hfill 
+\caption{Examples of TTBar events with different combinations of jets.}
+\label{fig:TTBar}
+\end{figure}
+
+\section{Jet Image Assembly and Background Noise Generation}
+The dataset is constructed in two main stages: first, jet images are assembled from pre-generated patches, and then background noise is generated and combined with the jet images. The following sections detail each stage of the process.
+
+\subsection{Poisson-Distributed Jet Image Assembly}
+
+The generation procedure begins with three sets of pre-generated particle jet images, corresponding to the classes \texttt{HToBB}, \texttt{QCD}, and \texttt{TTBar}. Each image patch, representing a single jet, is stored as a \texttt{.npy} file with fixed dimensions of $130 \times 130$ pixels.
+
+\begin{enumerate}
+    \item \textbf{Dataset loading.} All jet patches generated in Sec.4.2 are loaded from their respective source folders. 
+
+    \item \textbf{Preprocessing of jet patches.} Each jet is rotated by a random angle uniformly sampled in $[0^\circ, 360^\circ]$. After rotation, the axis-aligned bounding box is computed over all non-zero pixels, and both the rotated image and its bounding box are stored for later placement.
+
+    \item \textbf{Poisson sampling of jet counts.} For each output image, the number of jets of each class is drawn independently from a Poisson distribution with parameter $\lambda = 1$. Consequently, the total number of jets per image follows a Poisson distribution with parameter $\lambda_{\text{total}} = 3$.
+
+    \item \textbf{Assembly.} A blank canvas of size $512 \times 512$ pixels is created, along with a boolean mask to track available positions. Jets are placed sequentially at random locations on the canvas, ensuring that no overlap occurs by checking the mask. Bounding box coordinates are updated from local (patch) coordinates to the global (canvas) coordinate system.
+
+    \item \textbf{Labeling} Each placed jet is assigned a numerical class index according to its type:
+    \begin{itemize}
+        \item \texttt{QCD} $\rightarrow$ 0
+        \item \texttt{HtoBB} $\rightarrow$ 1
+        \item \texttt{TTBar} $\rightarrow$ 2
+    \end{itemize}
+    These indices are stored alongside the corresponding bounding box coordinates in the annotation CSV file.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/image_P_NoBkg_006_0137.png}
+        \caption*{Image with 3 patches formed by 6 jets each.}
+        \label{fig:6jet_nobkg}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/image_P_NoBkg_012_0403.png}
+        \caption*{Image with 4 patches formed by 12 jets each.}
+        \label{fig:12jet_nobkg}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/image_P_NoBkg_025_0034.png}
+        \caption*{Image with 4 patches formed by 25 jets each.}
+        \label{fig:25jet_nobkg}
+    \end{minipage}
+    \caption{Examples of images without background noise.}
+    \label{fig:nobkg}
+    \end{figure}
+
+\subsection{Background Noise Generation and Composition}
+
+The goal of this procedure is to generate background images that contain no jet-like physical structure but exhibit realistic intensity distributions (weighted by $p_{T}$), and to combine them with the previously assembled jet-only images.
+
+\begin{enumerate}
+    \item \textbf{Global parameters.} 
+    Images are rasterised with a resolution of $512\times512$ pixels within the region of interest (ROI) $[-1.5,1.5]^2$ in $(\eta,\phi)$. Events are processed in batches of $10^{4}$ jets, and for each batch several random seeds are used to produce multiple noise images.  
+
+    \item \textbf{Background generation.} 
+    For each batch and seed:
+    \begin{enumerate}
+        \item Take the transverse momenta of the particles, because $p_{T}$ carries the physical weight of each particle, ensuring realistic intensity values.  
+
+        \item Assign random positions: $\eta \sim U(-3,3)$ and $\phi \sim U[-\pi,\pi]$. Randomising spatial coordinates destroys the jet-like structure, producing a uniform background.  
+
+        \item Rasterise $(p_{T},\eta,\phi)$ triplets into the $512\times512$ grid, using $p_{T}$ as the weight. This is done to convert the list of particles into an image while preserving intensity proportional to particle momenta.  
+
+        \item Apply a logarithmic scaling ($\log(1+x)$) to compress the dynamic range. This reduces the dominance of very energetic particles, highlighting softer contributions and stabilising training.  
+
+        \item Save the background image as a \texttt{.npy} file.    
+    \end{enumerate}
+
+    \item \textbf{Jet + noise composition.} 
+    Jet-only images and noise images are paired in parallel. Each pair is summed element-wise and normalised to $[0,255]$ (8-bit, \texttt{uint8}). The result is saved as a \texttt{.npy} file in the output directory.  
+\end{enumerate}
+
+The output of this procedure is a set of jet images with synthetic background noise, ready for use in training or analysis, with annotations consistent with those computed from the jet-only stage.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/image_P_Bkg_006_0061.png}
+        \caption*{Image with 3 patches formed by 6 jets each, with noisy background.}
+        \label{fig:6jet_bkg}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/image_P_Bkg_012_0012.png}
+        \caption*{Image with 4 patches formed by 12 jets each, with noisy background.}
+        \label{fig:12jet_bkg}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap4/image_P_Bkg_025_0029.png}
+        \caption*{Image with 4 patches formed by 25 jets each, with noisy background.}
+        \label{fig:25jet_bkg}
+    \end{minipage}
+    \caption{Example of images with noisy background used to train out model.}
+    \label{fig:bkg}
+    \end{figure}
