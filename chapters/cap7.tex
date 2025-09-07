@@ -1,23 +1,31 @@
 \chapter{Training Results}
+\label{cap:results}
 
-In this chapter, the results obtained from the various training strategies and models are presented. The discussion will start with the results from the medical images, confronting the model's performances with different types of preprocessing described in Chapter 4. Then, the results from the jet images training will be presented, confronting the curriculum learning strategy with traditional training, going on with analyzing the impact of freezing different layers of the model during training and finishing with the transfer learning results on medical images.
-The model used for all training is the eight's version of YOLO, explained in Chapter 2. 
+In this chapter are presented the results obtained from the various training strategies and models. The discussion will start with the results from the medical images, confronting the model's performances with different types of preprocessing described in Section~\ref{sec:preprocessing}. The results from the jet image training will then be presented. The discussion will confront the curriculum learning strategy with traditional training, analyze the impact of freezing different layers of the model, and conclude with the transfer learning results on medical images.
+
+The model used for all training is the \textbf{eight's version of YOLO}, explained in Section~\ref{sec:yolo}. 
+Performances of the models were evaluated by comparing the \textbf{mAP@50} evaluated on various test sets.
+As explained in Section~\ref{sec:metrics}, the mAP@0.5 metric provides a single value that summarizes the precision-recall curve, giving us an overall measure of the model's ability to correctly identify and localize objects in the images.
+
+\subsection*{Pretrained Model with COCO}
+YOLO comes with a set of pre-trained weights on the COCO dataset, which can be used as a starting point for training on a new dataset. The COCO dataset is a large-scale object detection, and segmentation dataset that contains over 200,000 labeled images across 80 object categories. It is widely used in the computer vision community for benchmarking and pre-training models due to its diversity and complexity.
+Using a model pre-trained on COCO allows us to leverage the rich feature representations learned from a vast array of natural images. This is particularly beneficial when dealing with limited data, as the model can transfer knowledge from the COCO dataset to the target task, potentially improving performance and generalization.
 
 \section{Medical Images}
-The medical images used in this thesis are CT scans from the NLST dataset, which contains annotated lung nodules. The annotations were made by expert radiologists and include bounding boxes around the nodules, as well as additional information such as nodule size and location. We have approximately 9000 annotated images, which are sufficient to train a model.
-As explained in Chapter 4, different types  of preprocessing were applied to the image to enhance the features of interest, and a model was trained on the full dataset to establish a performance baseline and to compare the different types of preprocessing. 
-The model weights were initialized with the COCO pre-trained weights, and the hyperparameters used for training were as follows:
+The medical images used in this thesis are CT scans from the NLST dataset, which contains annotated lung nodules. The annotations were made by expert radiologists and include bounding boxes around the nodules. We have approximately 9000 annotated images, which are sufficient to train a model.
+As explained in Section~\ref{sec:preprocessing}, different types  of preprocessing were applied to the images to enhance the features of interest, and a model was trained on the full dataset to establish a performance baseline and to compare the different types of preprocessing. 
+The hyperparameters used for training were as follows:
 \begin{itemize}
     \item Learning Rate: $1 \cdot 10^{-4}$ with a cosine decay scheduler, which gradually decreases the learning rate over time following a cosine function. This helps the model converge more smoothly and can lead to better performance.
     \item Batch Size: 8
-    \item Box, Classificatio and Dual Focal Loss Weight: 7.5, 1.0, 1.5
+    \item Box, Classification and Dual Focal Loss Weight: 7.5, 1.0, 1.5
     \item Dropout: 0.3
-    \item Weight Decay: $1 \cdot 10^{-3}$
+    \item Weight Decay: $10^{-3}$
     \item Optimizer: Stochastic Gradient Descent (SGD) with momentum of 0.937
     \item Epochs number: 100, with early stopping if the validation loss does not improve for 10 consecutive epochs.
 \end{itemize}
 
-Data augmentation was applied in each training to enhance the model's ability to generalize. The augmentatins parameters used are:
+Data augmentation was applied in each training to enhance the model's ability to generalize. The augmentations parameters used are:
 \begin{itemize}
     \item Random horizontal and vertical flips with a probability of 0.5 (\texttt{fliplr, flipud})
     \item Random rotation between -10 and 10 degrees (\texttt{degrees})
@@ -30,44 +38,35 @@ The original files are in DICOM format, which is not accepted as input by YOLO, 
 The preprocessing confronted were: 
 \begin{enumerate}
     \item \textbf{Linear conversion} to 0-255 mantaining the original pixel size, 512x512.
-    \item \textbf{Linear conversion + masking} the lung region, mantaining the original pixel size, 512x512.
+    \item \textbf{Linear conversion and masking} the lung region, mantaining the original pixel size, 512x512.
     \item \textbf{Windowing} with width 1700 and level -600, mantaining the original pixel size, 512x512.
     \item \textbf{Windowing RGB} with three different window settings for each channel.
-    \item \textbf{Linear conversion + resampling + padding} to 704x704 pixels.
-    \item \textbf{Windowing + resampling + padding} to 704x704 pixels.
+    \item \textbf{Linear conversion, resampling and padding} to 704x704 pixels.
+    \item \textbf{Windowing, resampling and padding} to 704x704 pixels.
 \end{enumerate}
-The results of the different types of preprocessing are shown in Figure~\ref{fig:preprocessing_results}, which shows the mAP@50 evaluated on the validation set after each epoch during training.
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{immagini/cap7/mAP50B_preprocessing_padding.png}
-    \caption{mAP@50 evaluated on the validation set after each training epoch for the different types of preprocessing.}
-    \label{fig:preprocessing_results}
-\end{figure}
+The training was performed on approximately 7200 images, with 900 validtation images.
+Every dataset has their own test set, composed of approximately 900 images, and the model with the best mAP@50 on the validation set during training was saved and used for evaluation on the test set. The results are summarized in table \ref{tab:medical_results}.
 
-Every dataset has their own test set, composed of approximately 900 images, and the model with the best mAP@50 on the validation set during training was saved and used for evaluation on the test set. The results are summarized in the following table \ref{tab:medical_results}:
-
-\begin{table}[!ht]
-    \resizebox{\textwidth}{!}{%
-    \begin{tabular}{|c|c|c|}
-    \hline
-    \textbf{Model}                                                                 & \textbf{Test mAP@50}         & \textbf{Validation mAP@50}   \\ \hline
-    {\color[HTML]{3531FF} Linear conversion (0-255) {[}512, 512{]}}                & {\color[HTML]{3531FF} 0.631} & {\color[HTML]{3531FF} 0.771} \\
-    {\color[HTML]{F8A102} Linear conversion + masking {[}512, 512{]}}              & {\color[HTML]{F8A102} 0.752} & {\color[HTML]{F8A102} 0.637} \\
-    {\color[HTML]{009901} RGB windowing {[}512, 512{]}}                            & {\color[HTML]{009901} 0.770} & {\color[HTML]{009901} 0.729} \\
-    {\color[HTML]{FE0000} Standard Windowing {[}512, 512{]}}                       & {\color[HTML]{FE0000} 0.690} & {\color[HTML]{FE0000} 0.698} \\
-    {\color[HTML]{6200C9} Linear conversion + resampling + padding {[}704, 704{]}} & {\color[HTML]{6200C9} 0.718} & {\color[HTML]{6200C9} 0.721} \\
-    {\color[HTML]{643403} Windowing + resampling + padding {[}704, 704{]}}         & {\color[HTML]{643403} 0.952} & {\color[HTML]{643403} 0.944} \\ \hline
-    \end{tabular}
-    }
-    \caption{}
-    \label{tab:medical_results}
-\end{table}
+    \begin{table}[]
+        \caption{Results of the various test. In the column best epoch is reported the epoch in which the model has the highest mAP@50 on the validation set.}
+        \label{tab:medical_results}
+        \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Model}                                          & \textbf{Best Epoch} & \textbf{Test mAP@50} \\ \hline
+        Linear conversion (0-255) {[}512, 512{]}                & 32                  & 0.631                \\
+        Linear conversion + masking {[}512, 512{]}              & 28                  & 0.752                \\
+        RGB windowing  {[}512, 512{]}                           & 20                  & 0.770                \\
+        Standard Windowing {[}512, 512{]}                       & 31                  & 0.690                \\
+        Linear conversion + resampling + padding {[}704, 704{]} & 30                  & 0.718                \\
+        Windowing + resampling + padding  {[}704, 704{]}        & 100                 & 0.952                \\ \hline
+        \end{tabular}
+        \end{table}
 
 We can clearly see that the best preprocessing is the \textbf{linear conversion with resampling and padding}, which achieves a mAP@50 of 0.952 on the test set, significantly outperforming all other methods. This indicates that resampling to a larger size and padding the images helps the model learn more effectively, likely because it provides more context and detail for the nodules. 
-The resampling strategy works best because it standardizes the input size, if we take a look at the values, we can make these two comparisons: 
+The resampling strategy works best because it standardizes the input voxel size in $mm$. If we take a look at the values, we can make these two comparisons: 
 \begin{itemize}
     \item Linear conversion 512x512 has a mAP of 0.631, while the resampled set arrives to 0.952.
-    \item Windowing 512x512 achies a mAP of 0.690 on the test set, while the same set resampled arrives to 0.718.
+    \item Standard windowing 512x512 achives a mAP of 0.690 on the test set, while the same set resampled arrives to 0.718.
 \end{itemize}
 This shows that resampling has a significant positive impact on the model's performance, regardless of whether windowing or linear conversion is used.
 If we take a look at the other models, we can see that the RGB windowing also performs well, achieving a mAP@50 of 0.770 on the test set. This suggests that using multiple window settings to capture different aspects of the image can be beneficial for the model's learning process. 
@@ -77,12 +76,12 @@ Overall, these results highlight the importance of preprocessing techniques in m
 
 \newpage
 \section{Jets Model}
-As anticipated in Chapter 4, we created 10 datasets of particle jet images with varying difficulty levels by adjusting the number of jets per blob, the number of blobs per image (following a Poisson distribution), and the noisy background.
-Applying a curriculum learning strategy to train the model on the jets felt quite natural, since the difficulty criterion was defined a priori through the intentional design of the datasets. As explained in Chapter 2, curriculum learning is a training strategy where the network is first presented with simpler images, and the difficulty is gradually increased. This allows the network to learn salient image features more effectively without being overwhelmed by excessive complexity from the outset.
+As anticipated in Chapter~\ref{cap:jets}, we created 10 datasets of particle jet images with varying difficulty levels by adjusting the number of jets per blob, the number of blobs per image (following a Poisson distribution), and the noisy background.
+Applying a curriculum learning strategy to train the model on the jets felt quite natural, since the difficulty criterion was defined a priori through the intentional design of the datasets. As explained in Section~\ref{sec:yolo}, curriculum learning is a training strategy where the network is first presented with simpler images, and the difficulty is gradually increased. This allows the network to learn salient image features more effectively without being overwhelmed by excessive complexity from the outset.
 In traditional training, by contrast, all images are shuffled and presented to the network randomly, without consideration of difficulty.
 In this section we will detail the curriculum learning strategy we implemented, including the order of datasets, their composition, and the hyperparameters used at each stage, and will present the results obtained with this approach confronting them with those from traditional training.
 \subsection*{Curriculum Learning Strategy}
-First, we define the order in which the datasets are presented to the network. In this case, the order is as follows (from easiest to most difficult):
+First, we define the order in which the datasets are presented to the network.In this case, the order is as follows (from easiest to most difficult):
 \begin{itemize}
 \item Difficulty Level 1: 25-jet images without background noise
 \item Difficulty Level 2: 25-jet images with background noise
@@ -90,87 +89,57 @@ First, we define the order in which the datasets are presented to the network. I
 \item Difficulty Level 4: 12-jet images with background noise
 \item Difficulty Level 5: 6-jet images with background noise
 \item Difficulty Level 6: 6-jet images with background noise
-\item Difficulty Level 7: 3-jet images with background noise
-\item Difficulty Level 8: 3-jet images with background noise
-\item Difficulty Level 9: 1-jet images with background noise
-\item Difficulty Level 10: 1-jet images with background noise
 \end{itemize}
 
-\newpage
+In Figure \ref{fig:jet_levels} are shown examples of images from the various levels.
+
 \begin{figure}[h!]
     \centering
-    \begin{minipage}{0.19\textwidth}
+    % --- First row ---
+    \begin{minipage}{0.3\textwidth}
         \centering
         \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_025_0081.png}
         \caption*{Level 1}
-        \label{fig:25}
     \end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_025_0041.png}
-    \caption*{Level 2}
-    \label{fig:25_bkg}
-\end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_012_0127.png}
-    \caption*{Level 3}
-    \label{fig:12}
-\end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_012_0007.png}
-    \caption*{Level 4}
-    \label{fig:12_bkg}
-\end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_006_0004.png}
-    \caption*{Level 5}
-    \label{fig:6}
-\end{minipage} \hfill 
-\label{fig:qcd}
-\end{figure}
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_025_0041.png}
+        \caption*{Level 2}
+    \end{minipage} \hfill
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_012_0127.png}
+        \caption*{Level 3}
+    \end{minipage}
 
+    \vspace{0.5cm} % space between rows
 
-\begin{figure}[h!]
-    \centering
-    \begin{minipage}{0.19\textwidth}
+    % --- Second row ---
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_012_0007.png}
+        \caption*{Level 4}
+    \end{minipage} \hfill
+    \begin{minipage}{0.3\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_006_0004.png}
+        \caption*{Level 5}
+    \end{minipage} \hfill
+    \begin{minipage}{0.3\textwidth}
         \centering
         \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_006_0007.png}
         \caption*{Level 6}
-        \label{fig:6_bkg}
-    \end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_003_0424.png}
-    \caption*{Level 7}
-    \label{fig:3}
-\end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_003_0158.png}
-    \caption*{Level 8}
-    \label{fig:3_bkg}
-\end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_NoBkg_001_0073.png}
-    \caption*{Level 9}
-    \label{fig:1}
-\end{minipage} \hfill
-\begin{minipage}{0.19\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/image_P_Bkg_001_2196.png}
-    \caption*{Level 10}
-    \label{fig:1_bkg}
-\end{minipage} \hfill 
-\caption{Visual progression of the jet image difficulty levels used in the curriculum learning strategy. Levels 1--5 (top row) represent higher density jets with varying noise. Levels 6--10 (bottom row) introduce sparser signals and represent the final, most challenging stages of the curriculum.}
-\label{fig:jet_levels}
+    \end{minipage}
+
+    \caption{Visual progression of the jet image difficulty levels used in the curriculum learning strategy. 
+    Levels 1--3 (top row) represent higher density jets with varying noise. 
+    Levels 4--6 (bottom row) introduce sparser signals and represent the final, most challenging stages of the curriculum.}
+    \label{fig:jet_levels}
 \end{figure}
 
-However, the curriculum learning process was intentionally concluded after completing Level 6. As clearly shown in Figure~\ref{fig:jet_levels}, the progression to Levels 7--10 features increasingly sparse signals (3-jet and 1-jet images). This was considered counterproductive for our specific transfer learning goal. The decision was based on a qualitative analysis of the target medical data: the size, texture, and visual complexity of annotated lung lesions in CT scans were observed to be most analogous to the features learned from the 6-jet images. Training on sparser signals risked steering the model's feature extraction capabilities away from the relevant granularity needed for medical image analysis. Therefore, the model resulting from the Level 6 dataset was selected as the final pre-trained checkpoint for all subsequent transfer learning experiments.
-Using YOLO as the model, and having already detailed dataset creation in Chapter 6, we decided to create 6 distinct training datasets. Each will be trained for a predefined number of epochs with specific hyperparameters that we will elaborate on later. Upon completion of training on the first dataset, training on the second will begin automatically, using the weights from the end of the first step as the initial weights.
+
+
+Using YOLO as model, and having already detailed dataset creation in Section \ref{sec:yolo_dataset}, we created 6 distinct training datasets. Each will be trained for a predefined number of epochs with specific hyperparameters that we will elaborate on later. Upon completion of training on the first dataset, training on the second will begin automatically, using the weights from the end of the first step as the initial weights.
 Since our goal is to obtain a pre-trained network for subsequent use on medical images, we aim for the best possible model. Given that tumor lesions can vary in size and shape, we want to ensure that the datasets of increasing difficulty do not contain only one type of image. Instead, we maintain a degree of variety so that, as training progresses, the network does not forget the simpler images seen earlier.
 For this reason, the datasets are constructed as follows:
 \begin{itemize}
@@ -183,19 +152,21 @@ For this reason, the datasets are constructed as follows:
 \end{itemize}
 
 This way, each dataset contains images of increasing difficulty while also retaining a subset of simpler images from previous stages.
-We chose to incorporate 20$\%$ of the images from the previous dataset to maintain a balance between variety and difficulty, and to prevent the later datasets from becoming excessively large—especially since each base type contains 3000 images. This approach results in approximately $\sim$10,000 images in the final dataset, which remains manageable for training purposes.
-
+We chose to incorporate 20$\%$ of the images from the previous dataset to maintain a balance between variety and difficulty, and to prevent the later datasets from becoming excessively large, especially since each base type contains 3000 images. This approach results in approximately $\sim$7000 images in the final dataset, which remains manageable for training purposes.
+\\
+\\
+\\
 The hyperparameters were chose in a dynamic way, adapting to the increasing complexity of the datasets:
 \begin{itemize}
-    \item The learning rate was decreased as the datasets became more complex, starting from 0.001 and gradually reducing to 0.0001. This is because a lower learning rate allows the model to make smaller, more precise updates to the weights, which is beneficial when learning from more complex data.
-    \item The batch size was also reduced, starting from 32 and going down to 8. A large batch size at the start is useful because it provides a precise and stable estimate of the gradient direction. On simpler tasks, this allows the model to converge quickly and smoothly towards a good general area of the solution space without being distracted by the noise from individual examples. It's an efficient way to learn the dominant, common features (like basic shapes and textures) before tackling finer details. This creates a strong foundational model for subsequent fine-tuning on more complex data.
+    \item Learning rate was decreased as the datasets became more complex, starting from 0.001 and gradually reducing to 0.0001. This is because a lower learning rate allows the model to make smaller, more precise updates to the weights, which is beneficial when learning from more complex data.
+    \item Batch size was also reduced, starting from 32 and going down to 8. A large batch size at the start is useful because it provides a precise and stable estimate of the gradient direction. On simpler tasks, this allows the model to converge quickly and smoothly towards a good general area of the solution space without being distracted by the noise from individual examples. It's an efficient way to learn the dominant, common features (like basic shapes and textures) before tackling finer details. This creates a strong foundational model for subsequent fine-tuning on more complex data.
     \item Box loss weight was decreased from 7.5 (the standard value for YOLO) to 5.0. This is because, in the initial stages, the model needs to learn to localize objects accurately, which is crucial when the images are simpler and the objects are more distinct. As the datasets become more complex, the model should not penalize itself too heavily for localization errors, as the objects might be more difficoult to identify and localize accurately.
     \item Dropout was increased because the risk of overfitting grows with the complexity of the datasets. By increasing dropout, we encourage the model to learn more robust features that generalize better to unseen data. 
     \item Weight decay was also increased to furtger prevent overfitting by penalizing large weights, which can lead to a model that is too closely fitted to the training data.
     \item Data augmentation was applied in each step to enhance the model's ability to generalize, especially as the datasets became more complex. The augmentations used include random horizontal flips, random crops, and color jittering. These techniques help the model become more robust to variations in the input data, which is particularly important when dealing with complex images where the objects of interest may appear in different orientations, scales, and lighting conditions.
 \end{itemize}
 
-Early stopping was implemented to prevent overfitting. If the validation loss did not improve for 10 consecutive epochs (the number of epochs can be set in the configuration file, I chose 10), training was halted. This ensures that the model does not continue to train on a dataset once it has already learned the relevant features, which is particularly important as the datasets become more complex and the risk of overfitting increases.
+Early stopping was implemented to prevent overfitting. If the validation loss did not improve for 10 consecutive epochs (the number of epochs can be set in the configuration file, we chose 10), training was stopped. This ensures that the model does not continue to train on a dataset once it has already learned the relevant features, which is particularly important as the datasets become more complex and the risk of overfitting increases.
 \subsubsection*{Traditional Learning Strategy}
 For comparison, we also trained the same YOLO model using a traditional learning approach. In this case, all images from the 6 difficulty levels were combined into a single dataset, shuffled randomly, and presented to the network without any consideration of difficulty. This means that the model could encounter both simple and complex images at any point during training, which can make it harder for the network to learn effectively.
 The hyperparameters for the traditional learning approach were kept constant throughout the training process, as there was no progression in difficulty to adapt to. The chosen hyperparameters were:
@@ -209,23 +180,16 @@ The hyperparameters for the traditional learning approach were kept constant thr
 \end{itemize}
 Early stopping was also applied in this case, with the same criteria as in the curriculum learning approach. This ensures that the model does not overfit to the training data, even when trained on a mixed dataset of varying difficulty.
 
-\subsection*{Pretrained Model with COCO}
-YOLO comes with a set of pre-trained weights on the COCO datase, which can be used as a starting point for training on a new dataset.
-For a comprehensive comparison, we also trained a YOLO model pre-trained on the COCO dataset. The COCO dataset is a large-scale object detection, segmentation, and captioning dataset that contains over 200,000 labeled images across 80 object categories. It is widely used in the computer vision community for benchmarking and pre-training models due to its diversity and complexity.
-Using a model pre-trained on COCO allows us to leverage the rich feature representations learned from a vast array of natural images. This is particularly beneficial when dealing with limited data, as the model can transfer knowledge from the COCO dataset to the target task, potentially improving performance and generalization.
 
 \subsection*{Results - Curriculum Learning vs Traditional Learning}
-In this section, we present the results obtained from training the YOL0 model on the jet datasets using both curriculum learning and traditional learning, and in both cases using weights pre-trained on COCO and training from scratch, for a total of 4 different training strategies.
-The performance of the models were evaluated by comparing the mAP@50 (mean Average Precision (mAP) metric at an Intersection over Union (IoU) threshold of 0.5) after testing on a test dataset containing 300 images of the highest difficulty level (6-jet images with background noise).
-As explained in Chapter 2, the mAP@0.5 metric provides a single value that summarizes the precision-recall curve, giving us an overall measure of the model's ability to correctly identify and localize objects in the images.
-For each training, the \textbf{model with the best mAP@50 on the validation set during training was saved and used for evaluation on the test set.}
+In this section, we present the results obtained from training the YOLO model on the jet datasets using both curriculum learning and traditional learning, and in both cases using weights pre-trained on COCO and training from scratch, for a total of 4 different training strategies.
+The performances of the models were evaluated by comparing the mAP@50 after testing on a test dataset containing 300 images of the highest difficulty level (6-jet images with background noise).
+For each training, the model with the best mAP@50 on the validation set during training was saved and used for evaluation on the test set.
 The results are summarized in the following table:
 
 
 \begin{table}[!ht]
     \centering
-    \caption{mAP@50 results on the test set of the most difficult level (6-jet images with background noise).}
-    \label{tab:jet_results_hard}
     \begin{tabular}{cc}
     \toprule
     \textbf{Model} & \textbf{mAP@50} \\
@@ -237,8 +201,10 @@ The results are summarized in the following table:
     Curriculum learning from scratch & 0.464 \\
     \bottomrule
     \end{tabular}
+    \caption{mAP@50 results on the test set of the most difficult level (6-jet images with background noise).}
+    \label{tab:jet_results_hard}
 \end{table}
-The results, summarized in Table~\ref{tab:jet_results}, clearly indicate that the curriculum learning approach significantly outperforms traditional learning, regardless of whether the model was pre-trained on COCO or trained from scratch. Specifically, curriculum learning with COCO pre-trained weights achieved the highest mAP@50 of 0.467, while curriculum learning from scratch was a close second at 0.464. In contrast, traditional learning with COCO pre-trained weights and traditional learning from scratch achieved lower mAP@50 scores of 0.322 and 0.295, respectively.
+The results, summarized in Table~\ref{tab:jet_results_easy}, clearly indicate that the curriculum learning approach significantly outperforms traditional learning, regardless of whether the model was pre-trained on COCO or trained from scratch. Specifically, curriculum learning with COCO pre-trained weights achieved the highest mAP@50 of 0.467, while curriculum learning from scratch was a close second at 0.464. In contrast, traditional learning with COCO pre-trained weights and traditional learning from scratch achieved lower mAP@50 scores of 0.322 and 0.295, respectively.
 These results suggest that the structured progression of difficulty in curriculum learning allows the model to learn more effectively, leading to better performance on the complex test dataset. The fact that curriculum learning from scratch performed nearly as well as curriculum learning with COCO pre-trained weights indicates that the curriculum strategy itself is a powerful method for training models on complex datasets.
 
 One could argue that maybe the model trained with curriculum learning approach learns best the most difficoult images, but forgets the simpler ones because in the last epochs it only sees few simple images. To verify this, the models were evaluated also on the test set of the simplest difficulty level (25-jet images without background noise). The results, shown in Table~\ref{tab:jet_results_easy}, confirm that curriculum learning also performs best on the simplest images, achieving a mAP@50 of 0.993 with COCO pre-trained weights and 0.977 when trained from scratch. This indicates that the curriculum learning approach not only helps the model learn complex features but also retains its ability to recognize simpler patterns effectively.
@@ -246,8 +212,6 @@ One could argue that maybe the model trained with curriculum learning approach l
 
 \begin{table}[!ht]
     \centering
-    \caption{mAP@50 results on the test set of the simplest difficulty level (25-jet images without background noise).}
-    \label{tab:jet_results_easy}
     \begin{tabular}{cc}
     \toprule
     \textbf{Model} & \textbf{mAP@50} \\
@@ -259,12 +223,14 @@ One could argue that maybe the model trained with curriculum learning approach l
     Curriculum learning from scratch & 0.977 \\
     \bottomrule
     \end{tabular}
+    \caption{mAP@50 results on the test set of the simplest difficulty level (25-jet images without background noise).}
+    \label{tab:jet_results_easy}
 \end{table}
 
 \subsection{Freezing Layers}
-Since the best performing model we have is the one in which we used the COCO pre trained model, we're essentially doing a transfer learning between two different domains: natural images to jet images. 
+Since the best performing model we have is the one in which we used the COCO pre-trained model, we're essentially doing a transfer learning between two different domains: natural images to jet images. 
 To further investigate the impact of transfer learning strategies, we explored the effect of freezing different numbers of layers in the YOLO model during training on the jet datasets. Freezing layers means that the weights of those layers are not updated during training, allowing us to retain the features learned from pre-training while adapting only the unfrozen layers to the new task.
-If we take a look at YOLO's architecture, in Figure \ref{fig:yolo_architecture_2}, we can see that it consists in three main parts, as explained in Chapter 2:
+If we take a look at YOLO's architecture, in Figure \ref{fig:yolo_architecture_2}, we can see that it consists in three main parts, as explained in Section \ref{sec:yolo_architecture}.
 
 \begin{figure}[!ht]
     \centering
@@ -273,19 +239,12 @@ If we take a look at YOLO's architecture, in Figure \ref{fig:yolo_architecture_2
     \label{fig:yolo_architecture_2}
 \end{figure}
 
-
-\begin{itemize}
-    \item Backbone: first 10 layers of the YOLO architecture, responsible for extracting features from the input images. It typically consists of convolutional layers that capture low-level features such as edges, textures, and shapes. 
-    \item Head: responsible fot taking the features extracted by the backbone and transforming them into the final object detections. It uses upsampling (U) and concatenation (Concat) to combine features from different layers, allowing it to detect objects at various sizes. Finally, its C2f and Conv layers process these merged features to predict the bounding box coordinates, confidence scores, and class probabilities for each detected object.
-    \item Output: final layer that produces the model's predictions. It takes the processed features from the Head and applies a final convolution to output a tensor containing the coordinates of the bounding boxes, the confidence scores, and the class probabilities for each detected object. 
-\end{itemize}
-
 Since we're interested in understanding how much of the pre-trained knowledge from COCO is useful for our jet images, we experimented with freezing different layers of the backbone. Usually, when the domain of the images between the pretrained model and the new task is very different, it's common to not freeze any layers, allowing the model to adapt fully to the new dataset, as we did in the previous section. However, to fully explore the impact of this choice, we trained the model different times freezing an increasing number of layers. 
-The layers frozen were first 4, then 5, then 7 and finally 9, and were frozen in all the steps of the curriculum learning. In the Figure~\ref{fig:freeze_results} we can see the plot of the \textbf{mAP@50 evaluated on the validation of the sixth step set after each epoch during training} for the different models.
+The layers frozen were first 4, then 5, then 7 and finally 9, and were frozen in all the steps of the curriculum learning. In the Figure~\ref{fig:freeze_results} we can see the plot of the mAP@50 evaluated on the validation of the sixth step set after each epoch during training for the different models.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.7\textwidth]{immagini/cap7/mAP50B_step6_freeze_.png}
+    \includegraphics[width=0.9\textwidth]{immagini/cap7/mAP50B_step6_freeze.png}
     \caption{mAP@50 evaluated on the validations set after each training epoch of the last step. The different lines represent the models trained with different number of frozen layers.}
     \label{fig:freeze_results}
 \end{figure}
@@ -294,7 +253,7 @@ From the plot, we can see that the model with zero frozen layers performs best, 
 Freezing 4 layers still allows the model to perform reasonably well, but as we increase the number of frozen layers, the performance drops significantly. This indicates that the features learned in the earlier layers of the backbone are not sufficiently general to be useful for the jet images, and that adapting these layers is crucial for achieving good performance.
 
 To evaluate the performance of a model, we need to choose the best checkpoint during training. For example, the model with 0 frozen layers gets the best validation performance at approximately the 14th epoch, so we will use that checkpoint to evaluate the model on the test set. For other models, we will use the same criterion to choose the best checkpoint.
-The results on the test set of the most difficult level (6-jet images with background noise) are summarized in the following table:
+The results on the test set of the most difficult level (6-jet images with background noise) are summarized in the following table (Table \ref{tab:freeze}):
 
 
 \begin{table}[!ht]
@@ -311,10 +270,12 @@ The results on the test set of the most difficult level (6-jet images with backg
     COCO $\to$ Step 1 $\to$... $\to$ Step 6 [freeze = 9] & 0.363 \\
     \bottomrule
     \end{tabular}
+    \caption{mAP@50 results after testing the various models with different layers frozen on the test set of the most difficult level (6-jet images with background noise).}
+    \label{tab:freeze}
 \end{table}
 
 We can see that the model with 0 frozen layers achieves the highest mAP@50 of 0.482, confirming that allowing the entire model to adapt to the jet images is beneficial. As we increase the number of frozen layers, the performance drops, with the model freezing 9 layers achieving the lowest mAP@50 of 0.363. This further supports the idea that adapting the earlier layers of the backbone is crucial for achieving good performance on the jet images.
-
+\newpage
 \section{Transfer Learning Results on Medical Images}
 Since the goal of this thesis is to investigate the effectiveness of using a synthetic particle physics dataset as a source domain for transfer learning to overcome the lack of annotated medical images, the previous models were tested on two different sizes of medical datasets: one with 1000 images and one with 250. 
 A full training was performed on both datasets using the following pre trained models: 
@@ -336,7 +297,7 @@ The hyperparameters used for training on medical images were the same for all mo
     \item Batch Size: 8
     \item Box, Classificatio and Dual Focal Loss Weight: 7.5, 1.0, 1.5
     \item Dropout: 0.3
-    \item Weight Decay: $1 \cdot 10^{-3}$
+    \item Weight Decay: $10^{-3}$
     \item Optimizer: Stochastic Gradient Descent (SGD) with momentum of 0.937
 \end{itemize}
 
@@ -346,7 +307,7 @@ Data augmentation was applied in each training to enhance the model's ability to
     \item Random rotation between -10 and 10 degrees (\texttt{degrees})
     \item Random scaling between 0.8 and 1.2 according to the image size (\texttt{scale})
     \item Random translation of 0.05 according to the image size (\texttt{translate})
-    \item Color jittering with brightness, contrast, saturation, and hue adjustments of 0.05 (\texttt{$hsv_h$}, \texttt{$hsv_s$}, \texttt{$hsv_v$}) 
+    \item Color jittering with brightness, contrast, saturation, and hue adjustments of 0.05 for each parameter(\texttt{$hsv_h$}, \texttt{$hsv_s$}, \texttt{$hsv_v$}) 
 \end{itemize}
 Early stopping was also applied in this case, with the same criteria as in the previous sections. This ensures that the model does not overfit to the training data, even when trained on a limited number of medical images.
 
@@ -354,7 +315,7 @@ Early stopping was also applied in this case, with the same criteria as in the p
 \subsection{Evaluation Methodology}
 In a typical machine learning scenario, the scarcity of annotated data forces a difficult trade-off: dedicating most available data to training, leaving only a small, potentially unreliable hold-out set for testing. This often leads to evaluations that are highly sensitive to the specific images chosen for the test set, making it difficult to draw robust conclusions about model performance.
 
-Our experimental setup inverts this paradigm. By design, we are training our models on intentionally limited subsets (e.g., 800 and 200 images) to study learning efficiency with little data. This deliberate choice liberates a large pool of images—thousands, in our case—that would normally be consumed by the training process.
+Our experimental setup inverts this paradigm. By design, we are training our models on intentionally limited subsets (e.g., 800 and 200 images) to study learning efficiency with little data. This deliberate choice liberates a large pool of images (thousands, in our case) that would normally be dedicated to the training process.
 
 We leverage this unique advantage to address the core issue of evaluation reliability. Instead of pooling all remaining data into a single large test set, we use it to create multiple independent test subsets. This approach allows us to rigorously probe the question: "If we were in a real-world scenario with only a small test set, how confident could we be in our results?"
 
@@ -379,19 +340,10 @@ In short, we sacrifice a single test evaluation to gain deep insights into the v
 \end{itemize}
  
 \subsection*{800 images}
-The first case tested was with 800 training images and 100 validation images, testing on 10 subsets of 100 images each. In the following plot (Fig. \ref{fig:val_800}), we can see the evaluation of the mAP@50 after each epoch on the validation set during training for each model.
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/mAP50B_NLST_1000.png}
-    \caption{mAP@50 evaluated on the validation set after each training epoch. The different lines represent the models trained with different pre trained weights and different number of frozen layers.}
-    \label{fig:val_800}
-\end{figure}
-
+The first case tested was with 800 training images and 100 validation images, testing on 10 subsets of 100 images each.
 In the Table \ref{tab:medical_results_800} are reported the best epoch for each model and the corrispoding mAP@50 mean and standard deviation on the 10 test sets. The interval reported is calculated as [mean - std, mean + std].
 
 \begin{table}[!ht]
-    \caption{Evaluation of the models on 10 different test sets of 100 images each, after training on 800 medical images and choosing the best epoch according to the validation set.}
-    \label{tab:medical_results_800}
     \resizebox{\textwidth}{!}{%
     \begin{tabular}{|ccll|}
     \hline
@@ -408,6 +360,8 @@ In the Table \ref{tab:medical_results_800} are reported the best epoch for each 
     \multicolumn{1}{|c|}{{\color[HTML]{9CCB44} medical images from scratch}}                                            & \multicolumn{1}{c|}{{\color[HTML]{9CCB44} 100}} & \multicolumn{1}{l|}{{\color[HTML]{9CCB44} 0.113 $\pm$ 0.030}} & {\color[HTML]{9CCB44} {[}0.105; 0.164{]}}                   \\ \hline
     \end{tabular}
     }
+    \caption{Evaluation of the models on 10 different test sets of 100 images each, after training on 800 medical images and choosing the best epoch according to the validation set.}
+    \label{tab:medical_results_800}
 \end{table}
 
 From the results in Table \ref{tab:medical_results_800}, we can see that based on the mAP@50 performance, the best and statistically compatible models are:
@@ -424,7 +378,7 @@ The models that did not use COCO pre-trained weights, such as those starting fro
 To give a visual representation of the distribution scores across the test sets for each model, a violin plot is shown in Fig. \ref{fig:violin_plot_800}. We can observe that the model COCO $\to$ jets {[}freeze = 0{]} $\to$ medical images {[}freeze = 0{]} not only has the highest mean score, but also a relatively narrow distribution, indicating consistent performance across different test sets. The model COCO $\to$ medical images {[}freeze = 0{]} also shows a high mean score with a slightly wider distribution. The models that did not use COCO pre-trained weights have lower mean scores.
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=0.6\textwidth]{immagini/cap7/violin_plot_100.png}
+    \includegraphics[width=0.7\textwidth]{immagini/cap7/violin_plot_100.png}
     \caption{Violin plot of the mAP@50 results on the 10 different test sets for each model after training on 800 medical images. The width of each violin represents the distribution of the scores, with wider sections indicating a higher density of scores in that range. The horizontal line inside each violin indicates the mean score for that model.}
     \label{fig:violin_plot_800}
 \end{figure}
@@ -432,17 +386,9 @@ To give a visual representation of the distribution scores across the test sets 
 
 \subsection*{200 images}
 The second case analysed in this thesis was with 200 training images and 25 validation images, testing on 10 subsets of 25 images each, to simulate the scenario with very limited data, and on 10 subsets of 100 images each, to compare the results with the previous case. In fact, we can not compare the results of the models trained on 200 images with those trained on 800 images, because the test sets are different. So, to have a fair comparison, we also tested the models trained on 200 images on 10 subsets of 100 images each.
-The procedure is the same as the previous section, and in the following plot (Fig. \ref{fig:val_200}), we can see the evaluation of the mAP@50 after each epoch on the validation set during training for each model.
+The procedure is the same as the previous section.
 
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{immagini/cap7/mAP50B_NLST_250.png}
-    \caption{mAP@50 evaluated on the validation set after each training epoch. The different lines represent the models trained with different pre trained weights and different number of frozen layers.}
-    \label{fig:val_200}
-\end{figure}
-
-In the Table \ref{tab:medical_results_200} are reported the best epoch for each model and the corrisponding mAP@50 mean and standard deviation on the 10 test sets of 25 and 100 images each. 
+In Table \ref{tab:medical_results_200} are reported the best epoch for each model and the corrisponding mAP@50 mean and standard deviation on the 10 test sets of 25 and 100 images each. 
 
 \begin{table}[!ht]
     \resizebox{\textwidth}{!}{%
@@ -499,7 +445,7 @@ The first violin plot (Fig. \ref{fig:violin_plot_200} (a)) corresponds to the mA
 \end{figure}
 
 \subsection*{Discussion}
-A cross comparison between the results obtained with 800 training images and those obtained with 200 training images can be made by looking at the relative violin plots. For ease of comparison, the two images are displayed below, in Fig. \ref{fig:violin_plot_comparison}. The left plot (a) corresponds to the results with 800 training images, while the right plot (b) corresponds to the results with 200 training images, both evaluated on test sets of 100 images each.
+A cross comparison between the results obtained with 800 training images and those obtained with 200 training images can be made by looking at the relative violin plots. For ease of comparison, the two images are displayed below, in Fig. \ref{fig:violin_plot_comparison}. Plot (a) corresponds to the results with 800 training images, while plot (b) corresponds to the results with 200 training images, both evaluated on test sets of 100 images each.
 The comparison reveals several insights:
 \begin{itemize}
     \item Models that utilized only COCO pre-trained weights (with or without layers) have a notable drop in performance when the training set is reduced. This suggests that these models rely heavily on the amount of training data to adapt. 
